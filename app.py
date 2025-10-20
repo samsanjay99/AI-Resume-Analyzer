@@ -570,7 +570,6 @@ class ResumeApp:
         import pandas as pd
         import plotly.express as px
         import plotly.graph_objects as go
-        import os
         
         st.markdown("## 👑 Admin Dashboard")
         st.markdown("*Welcome to the administrative control panel*")
@@ -1763,8 +1762,6 @@ class ResumeApp:
             st.success(f"✅ File uploaded: {uploaded_file.name}")
             
             # Save uploaded file to uploads directory
-            import os
-            
             uploads_dir = "uploads"
             if not os.path.exists(uploads_dir):
                 os.makedirs(uploads_dir)
@@ -2135,7 +2132,6 @@ class ResumeApp:
         # Apply modern styles
         from ui_components import apply_modern_styles
         import base64
-        import os
 
         # Function to load image as base64
         def get_image_as_base64(file_path):
@@ -2471,7 +2467,6 @@ class ResumeApp:
 
             if uploaded_file:
                 # Save uploaded file to uploads directory
-                import os
                 
                 uploads_dir = "uploads"
                 if not os.path.exists(uploads_dir):
@@ -3562,7 +3557,6 @@ class ResumeApp:
                 if analyze_ai:
                     with st.spinner(f"Analyzing your resume with {ai_model}..."):
                         # Save uploaded file to uploads directory
-                        import os
                         
                         uploads_dir = "uploads"
                         if not os.path.exists(uploads_dir):

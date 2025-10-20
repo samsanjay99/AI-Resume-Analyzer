@@ -31,6 +31,9 @@ sqlalchemy
 openpyxl
 reportlab
 
+# SQLite dependencies (built into Python)
+# No additional dependencies needed for SQLite
+
 # PDF processing (lightweight)
 pdfminer.six==20221105
 

@@ -136,3 +136,15 @@ Thumbs.db
 # Resume files uploaded by users
 uploads/
 resume_data.db
+
+# Generated portfolios and temporary files
+generated_portfolios/
+temp_portfolios/
+
+# Node modules (if any)
+node_modules/
+package-lock.json
+
+# Backup files
+*.bak
+*_backup_*

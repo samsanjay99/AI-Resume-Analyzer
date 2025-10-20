@@ -26,8 +26,8 @@ from config.job_roles import JOB_ROLES
 from config.database import (
     get_database_connection, save_resume_data, save_analysis_data,
     init_database, verify_admin, log_admin_action, save_ai_analysis_data,
-    get_ai_analysis_stats, reset_ai_analysis_stats, get_detailed_ai_analysis_stats,
-    get_all_resume_data, get_admin_analytics
+    get_ai_analysis_stats, reset_ai_analysis_stats, get_all_resume_data, 
+    get_admin_analytics, get_resume_stats
 )
 from utils.ai_resume_analyzer import AIResumeAnalyzer
 from utils.resume_builder import ResumeBuilder
@@ -102,15 +102,16 @@ class ResumeApp:
         
         # Initialize database and create default admin
         init_database()
+        
+        # Debug admin table
+        from config.database import debug_admin_table
+        debug_admin_table()
 
         # Initialize session state
         if 'user_id' not in st.session_state:
             st.session_state.user_id = 'default_user'
         if 'selected_role' not in st.session_state:
             st.session_state.selected_role = None
-
-        # Initialize database
-        init_database()
 
         # Load external CSS
         with open('style/style.css') as f:
@@ -133,10 +134,14 @@ class ResumeApp:
 
     def load_lottie_url(self, url: str):
         """Load Lottie animation from URL"""
-        r = requests.get(url)
-        if r.status_code != 200:
+        try:
+            r = requests.get(url, timeout=5)
+            if r.status_code != 200:
+                return None
+            return r.json()
+        except Exception as e:
+            print(f"Could not load Lottie animation: {e}")
             return None
-        return r.json()
 
     def apply_global_styles(self):
         st.markdown("""
@@ -571,6 +576,12 @@ class ResumeApp:
         st.markdown("## 👑 Admin Dashboard")
         st.markdown("*Welcome to the administrative control panel*")
         
+        # Add refresh button
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("🔄 Refresh Data", type="secondary", use_container_width=True):
+                st.rerun()
+        
         # Admin tabs
         admin_tabs = st.tabs([
             "📊 Analytics Overview", 
@@ -583,6 +594,11 @@ class ResumeApp:
         # Get admin analytics data
         analytics = get_admin_analytics()
         all_resume_data = get_all_resume_data()
+        
+        # Debug information (can be removed later)
+        if st.checkbox("🔍 Show Debug Info", key="admin_debug"):
+            st.write("**Debug - Analytics Data:**", analytics)
+            st.write("**Debug - Resume Data Count:**", len(all_resume_data))
         
         with admin_tabs[0]:  # Analytics Overview
             st.subheader("📊 System Overview")
@@ -667,57 +683,194 @@ class ResumeApp:
         with admin_tabs[2]:  # Resume Files
             st.subheader("📄 Uploaded Resume Files")
             
-            # Create uploads directory if it doesn't exist
-            uploads_dir = "uploads"
-            if not os.path.exists(uploads_dir):
-                os.makedirs(uploads_dir)
-                st.info("Created uploads directory for future file storage.")
+            # Get uploaded files from database
+            from config.database import get_all_uploaded_files
+            uploaded_files = get_all_uploaded_files()
             
-            # List uploaded files
-            try:
-                files = os.listdir(uploads_dir)
-                pdf_files = [f for f in files if f.lower().endswith('.pdf')]
+            if uploaded_files:
+                st.write(f"**Found {len(uploaded_files)} uploaded files:**")
                 
-                if pdf_files:
-                    st.write(f"**Found {len(pdf_files)} PDF files:**")
+                # Convert to DataFrame for better display
+                files_df = pd.DataFrame(uploaded_files, columns=[
+                    'ID', 'Filename', 'Original Name', 'File Path', 'Size (bytes)', 
+                    'File Type', 'Upload Source', 'Timestamp'
+                ])
+                
+                # Add size in KB column
+                files_df['Size (KB)'] = (files_df['Size (bytes)'] / 1024).round(1)
+                
+                # Display filters
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    source_filter = st.selectbox("Filter by Source", 
+                                               ['All'] + list(files_df['Upload Source'].unique()))
+                with col2:
+                    file_type_filter = st.selectbox("Filter by Type", 
+                                                   ['All'] + list(files_df['File Type'].unique()))
+                with col3:
+                    show_count = st.selectbox("Show Files", [10, 25, 50, 100], index=1)
+                
+                # Apply filters
+                filtered_files = files_df.copy()
+                if source_filter != 'All':
+                    filtered_files = filtered_files[filtered_files['Upload Source'] == source_filter]
+                if file_type_filter != 'All':
+                    filtered_files = filtered_files[filtered_files['File Type'] == file_type_filter]
+                
+                filtered_files = filtered_files.head(show_count)
+                
+                # Display files table
+                display_columns = ['Original Name', 'Upload Source', 'File Type', 'Size (KB)', 'Timestamp']
+                st.dataframe(filtered_files[display_columns], use_container_width=True)
+                
+                # File download section
+                st.subheader("📥 Download Files")
+                
+                for i, (_, file_info) in enumerate(filtered_files.iterrows()):
+                    col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
                     
-                    for i, file in enumerate(pdf_files):
-                        col1, col2, col3 = st.columns([3, 1, 1])
-                        
-                        with col1:
-                            st.write(f"📄 {file}")
-                        
-                        with col2:
-                            file_path = os.path.join(uploads_dir, file)
-                            file_size = os.path.getsize(file_path)
-                            st.write(f"{file_size / 1024:.1f} KB")
-                        
-                        with col3:
-                            with open(file_path, "rb") as f:
+                    with col1:
+                        st.write(f"📄 {file_info['Original Name']}")
+                        st.caption(f"Source: {file_info['Upload Source']} | {file_info['Timestamp']}")
+                    
+                    with col2:
+                        st.write(f"{file_info['Size (KB)']} KB")
+                    
+                    with col3:
+                        st.write(file_info['File Type'].split('/')[-1].upper())
+                    
+                    with col4:
+                        try:
+                            if os.path.exists(file_info['File Path']):
+                                with open(file_info['File Path'], "rb") as f:
+                                    file_data = f.read()
                                 st.download_button(
                                     "⬇️ Download",
-                                    f.read(),
-                                    file_name=file,
-                                    mime="application/pdf",
-                                    key=f"download_{i}"
+                                    file_data,
+                                    file_name=file_info['Original Name'],
+                                    mime=file_info['File Type'],
+                                    key=f"download_file_{i}"
                                 )
-                else:
-                    st.info("No PDF files found in uploads directory.")
-                    st.write("💡 **Note:** Resume files will appear here when users upload them for analysis.")
-            
-            except Exception as e:
-                st.error(f"Error accessing uploads directory: {e}")
+                            else:
+                                st.error("File not found")
+                        except Exception as e:
+                            st.error(f"Error: {str(e)}")
+                
+                # Download CSV of file list
+                csv = filtered_files.to_csv(index=False)
+                st.download_button(
+                    label="📥 Download File List CSV",
+                    data=csv,
+                    file_name=f"uploaded_files_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv"
+                )
+                
+            else:
+                st.info("No files uploaded yet.")
+                st.write("💡 **Note:** Resume files will appear here when users upload them for analysis.")
+                
+                # Show directory status for debugging
+                uploads_dir = "uploads"
+                if os.path.exists(uploads_dir):
+                    files_in_dir = os.listdir(uploads_dir)
+                    if files_in_dir:
+                        st.warning(f"Found {len(files_in_dir)} files in uploads directory but not in database. This may indicate files were uploaded before the database tracking was implemented.")
+                        
+                        # Option to sync existing files
+                        if st.button("🔄 Sync Existing Files to Database"):
+                            from config.database import save_uploaded_file_info
+                            synced_count = 0
+                            for file in files_in_dir:
+                                file_path = os.path.join(uploads_dir, file)
+                                if os.path.isfile(file_path):
+                                    file_size = os.path.getsize(file_path)
+                                    file_type = "application/pdf" if file.lower().endswith('.pdf') else "application/octet-stream"
+                                    
+                                    result = save_uploaded_file_info(
+                                        filename=file,
+                                        original_name=file,
+                                        file_path=file_path,
+                                        file_size=file_size,
+                                        file_type=file_type,
+                                        upload_source="Legacy Upload"
+                                    )
+                                    if result:
+                                        synced_count += 1
+                            
+                            if synced_count > 0:
+                                st.success(f"✅ Synced {synced_count} files to database!")
+                                st.rerun()
+                            else:
+                                st.error("Failed to sync files to database.")
         
         with admin_tabs[3]:  # Feedback & Ratings
             st.subheader("💬 User Feedback & Ratings")
             
-            # This would connect to feedback system
-            st.info("🚧 Feedback system integration coming soon!")
-            st.write("**Planned Features:**")
-            st.write("- User satisfaction ratings")
-            st.write("- Feature feedback")
-            st.write("- Bug reports")
-            st.write("- Improvement suggestions")
+            # Get feedback data
+            from config.database import get_all_feedback, get_feedback_stats
+            feedback_data = get_all_feedback()
+            feedback_stats = get_feedback_stats()
+            
+            # Display feedback statistics
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric("Total Feedback", feedback_stats['total_responses'])
+            with col2:
+                st.metric("Avg Rating", f"{feedback_stats['avg_rating']}/5.0")
+            with col3:
+                st.metric("Usability Score", f"{feedback_stats['avg_usability']}/5.0")
+            with col4:
+                st.metric("Satisfaction", f"{feedback_stats['avg_satisfaction']}/5.0")
+            
+            # Display feedback data
+            if feedback_data:
+                st.subheader("📝 Recent Feedback")
+                
+                # Convert to DataFrame for better display
+                feedback_df = pd.DataFrame(feedback_data, columns=[
+                    'ID', 'Rating', 'Usability', 'Satisfaction', 
+                    'Missing Features', 'Improvements', 'Experience', 'Timestamp'
+                ])
+                
+                # Display with filters
+                col1, col2 = st.columns(2)
+                with col1:
+                    min_rating = st.selectbox("Minimum Rating", [1, 2, 3, 4, 5], index=0)
+                with col2:
+                    show_count = st.selectbox("Show Records", [10, 25, 50, 100], index=0)
+                
+                # Filter data
+                filtered_feedback = feedback_df[feedback_df['Rating'] >= min_rating].head(show_count)
+                
+                # Display data
+                st.dataframe(filtered_feedback, use_container_width=True)
+                
+                # Download CSV
+                csv = filtered_feedback.to_csv(index=False)
+                st.download_button(
+                    label="📥 Download Feedback CSV",
+                    data=csv,
+                    file_name=f"feedback_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv"
+                )
+                
+                # Show detailed feedback
+                if st.checkbox("Show Detailed Feedback"):
+                    for _, feedback in filtered_feedback.iterrows():
+                        with st.expander(f"Feedback #{feedback['ID']} - Rating: {feedback['Rating']}/5"):
+                            st.write(f"**Usability Score:** {feedback['Usability']}/5")
+                            st.write(f"**Satisfaction:** {feedback['Satisfaction']}/5")
+                            st.write(f"**Timestamp:** {feedback['Timestamp']}")
+                            
+                            if feedback['Missing Features']:
+                                st.write(f"**Missing Features:** {feedback['Missing Features']}")
+                            if feedback['Improvements']:
+                                st.write(f"**Improvement Suggestions:** {feedback['Improvements']}")
+                            if feedback['Experience']:
+                                st.write(f"**User Experience:** {feedback['Experience']}")
+            else:
+                st.info("No feedback received yet. Encourage users to submit feedback!")
         
         with admin_tabs[4]:  # Detailed Charts
             st.subheader("📈 Detailed Analytics Charts")
@@ -1218,21 +1371,24 @@ class ResumeApp:
         from ui_components import apply_modern_styles, page_header
         apply_modern_styles()
         
-        # Inject modern tech-style CSS for Portfolio Generator page
+        # Inject targeted CSS for Portfolio Generator page content only
         st.markdown("""
         <style>
-        /* Modern Tech Theme for Portfolio Generator Page */
-        .main .block-container {
+        /* Portfolio Generator Page Specific Styles - Targeting main content only */
+        .portfolio-page {
             background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%) !important;
             color: #ffffff !important;
             position: relative;
             overflow: hidden;
+            border-radius: 10px;
+            margin: 0 !important;
+            padding: 0 !important;
         }
         
-        /* Animated background pattern */
-        .main .block-container::before {
+        /* Animated background pattern - only for portfolio page */
+        .portfolio-page::before {
             content: '';
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
@@ -1251,12 +1407,8 @@ class ResumeApp:
             66% { transform: translateY(10px) rotate(-1deg); }
         }
         
-        .stApp > div:first-child {
-            background: transparent !important;
-        }
-        
-        /* Page header styling with tech glow */
-        .page-header {
+        /* Page header styling with tech glow - scoped to portfolio page */
+        .portfolio-page .page-header {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
             color: #00d4ff !important;
             border: 2px solid #00d4ff !important;
@@ -1266,7 +1418,7 @@ class ResumeApp:
             overflow: hidden;
         }
         
-        .page-header::before {
+        .portfolio-page .page-header::before {
             content: '';
             position: absolute;
             top: 0;
@@ -1282,23 +1434,24 @@ class ResumeApp:
             100% { left: 100%; }
         }
         
-        .header-title {
+        .portfolio-page .header-title {
             color: #00d4ff !important;
             text-shadow: 0 0 10px rgba(0, 212, 255, 0.5) !important;
             font-weight: 700 !important;
         }
         
-        .header-subtitle, .header-description {
+        .portfolio-page .header-subtitle, 
+        .portfolio-page .header-description {
             color: #b0b0b0 !important;
         }
         
-        /* Content sections with tech styling */
-        div[data-testid="stMarkdownContainer"] {
+        /* Content sections with tech styling - scoped to portfolio page only */
+        .portfolio-page div[data-testid="stMarkdownContainer"] {
             color: #ffffff !important;
         }
         
-        /* Instructions box with cyber styling */
-        div[style*="background-color: #1e1e1e"] {
+        /* Instructions box with cyber styling - scoped to portfolio page */
+        .portfolio-page div[style*="background-color: #1e1e1e"] {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
             color: #ffffff !important;
             border: 2px solid #4ecdc4 !important;
@@ -1308,7 +1461,7 @@ class ResumeApp:
             overflow: hidden;
         }
         
-        div[style*="background-color: #1e1e1e"]::before {
+        .portfolio-page div[style*="background-color: #1e1e1e"]::before {
             content: '';
             position: absolute;
             top: 0;
@@ -1324,8 +1477,8 @@ class ResumeApp:
             100% { transform: translateX(100%); }
         }
         
-        /* File uploader with tech styling */
-        .stFileUploader {
+        /* File uploader with tech styling - scoped to portfolio page */
+        .portfolio-page .stFileUploader {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
             border: 2px dashed #00d4ff !important;
             border-radius: 15px !important;
@@ -1333,14 +1486,14 @@ class ResumeApp:
             transition: all 0.3s ease !important;
         }
         
-        .stFileUploader:hover {
+        .portfolio-page .stFileUploader:hover {
             border-color: #4ecdc4 !important;
             box-shadow: 0 0 25px rgba(0, 212, 255, 0.3) !important;
             transform: translateY(-2px) !important;
         }
         
-        /* Buttons with cyber glow */
-        .stButton > button {
+        /* Buttons with cyber glow - scoped to portfolio page */
+        .portfolio-page .stButton > button {
             background: linear-gradient(135deg, #00d4ff 0%, #4ecdc4 100%) !important;
             color: #0a0a0a !important;
             border: none !important;
@@ -1353,7 +1506,7 @@ class ResumeApp:
             overflow: hidden !important;
         }
         
-        .stButton > button::before {
+        .portfolio-page .stButton > button::before {
             content: '';
             position: absolute;
             top: 0;
@@ -1364,18 +1517,18 @@ class ResumeApp:
             transition: all 0.5s ease;
         }
         
-        .stButton > button:hover {
+        .portfolio-page .stButton > button:hover {
             background: linear-gradient(135deg, #4ecdc4 0%, #00d4ff 100%) !important;
             transform: translateY(-3px) !important;
             box-shadow: 0 10px 25px rgba(0, 212, 255, 0.4) !important;
         }
         
-        .stButton > button:hover::before {
+        .portfolio-page .stButton > button:hover::before {
             left: 100%;
         }
         
-        /* Success/Info messages with tech styling */
-        .stSuccess {
+        /* Success/Info messages with tech styling - scoped to portfolio page */
+        .portfolio-page .stSuccess {
             background: linear-gradient(135deg, #1a4d3a 0%, #2e7d32 100%) !important;
             color: #4caf50 !important;
             border: 2px solid #4caf50 !important;
@@ -1383,7 +1536,7 @@ class ResumeApp:
             box-shadow: 0 0 15px rgba(76, 175, 80, 0.3) !important;
         }
         
-        .stInfo {
+        .portfolio-page .stInfo {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
             color: #00d4ff !important;
             border: 2px solid #00d4ff !important;
@@ -1391,35 +1544,35 @@ class ResumeApp:
             box-shadow: 0 0 15px rgba(0, 212, 255, 0.3) !important;
         }
         
-        /* Tabs with cyber styling */
-        .stTabs [data-baseweb="tab-list"] {
+        /* Tabs with cyber styling - scoped to portfolio page */
+        .portfolio-page .stTabs [data-baseweb="tab-list"] {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
             border-radius: 15px !important;
             border: 2px solid #333 !important;
             padding: 5px !important;
         }
         
-        .stTabs [data-baseweb="tab"] {
+        .portfolio-page .stTabs [data-baseweb="tab"] {
             color: #b0b0b0 !important;
             background-color: transparent !important;
             border-radius: 10px !important;
             transition: all 0.3s ease !important;
         }
         
-        .stTabs [data-baseweb="tab"]:hover {
+        .portfolio-page .stTabs [data-baseweb="tab"]:hover {
             color: #00d4ff !important;
             background-color: rgba(0, 212, 255, 0.1) !important;
         }
         
-        .stTabs [aria-selected="true"] {
+        .portfolio-page .stTabs [aria-selected="true"] {
             background: linear-gradient(135deg, #00d4ff 0%, #4ecdc4 100%) !important;
             color: #0a0a0a !important;
             font-weight: 600 !important;
             box-shadow: 0 0 15px rgba(0, 212, 255, 0.4) !important;
         }
         
-        /* Preview and download sections */
-        div[style*="background-color: #2d2d2d"] {
+        /* Preview and download sections - scoped to portfolio page */
+        .portfolio-page div[style*="background-color: #2d2d2d"] {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
             color: #ffffff !important;
             border: 2px solid #4ecdc4 !important;
@@ -1427,7 +1580,7 @@ class ResumeApp:
             box-shadow: 0 0 20px rgba(78, 205, 196, 0.2) !important;
         }
         
-        div[style*="background-color: #1a4d3a"] {
+        .portfolio-page div[style*="background-color: #1a4d3a"] {
             background: linear-gradient(135deg, #1a4d3a 0%, #2e7d32 100%) !important;
             color: #4caf50 !important;
             border: 2px solid #4caf50 !important;
@@ -1435,25 +1588,26 @@ class ResumeApp:
             box-shadow: 0 0 20px rgba(76, 175, 80, 0.3) !important;
         }
         
-        /* Subheaders with glow effect */
-        .stSubheader {
+        /* Subheaders with glow effect - scoped to portfolio page */
+        .portfolio-page .stSubheader {
             color: #00d4ff !important;
             text-shadow: 0 0 10px rgba(0, 212, 255, 0.5) !important;
             font-weight: 600 !important;
         }
         
-        /* Text elements with better contrast */
-        h1, h2, h3, h4, h5, h6 {
+        /* Text elements with better contrast - scoped to portfolio page */
+        .portfolio-page h1, .portfolio-page h2, .portfolio-page h3, 
+        .portfolio-page h4, .portfolio-page h5, .portfolio-page h6 {
             color: #00d4ff !important;
             text-shadow: 0 0 5px rgba(0, 212, 255, 0.3) !important;
         }
         
-        p, li, span {
+        .portfolio-page p, .portfolio-page li, .portfolio-page span {
             color: #e0e0e0 !important;
         }
         
-        /* Code elements with tech styling */
-        code {
+        /* Code elements with tech styling - scoped to portfolio page */
+        .portfolio-page code {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
             color: #4ecdc4 !important;
             border: 1px solid #4ecdc4 !important;
@@ -1462,13 +1616,13 @@ class ResumeApp:
             font-family: 'JetBrains Mono', monospace !important;
         }
         
-        /* Spinner with tech colors */
-        .stSpinner {
+        /* Spinner with tech colors - scoped to portfolio page */
+        .portfolio-page .stSpinner {
             color: #00d4ff !important;
         }
         
-        /* Download button with special styling */
-        .stDownloadButton > button {
+        /* Download button with special styling - scoped to portfolio page */
+        .portfolio-page .stDownloadButton > button {
             background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%) !important;
             color: white !important;
             border-radius: 25px !important;
@@ -1478,63 +1632,63 @@ class ResumeApp:
             transition: all 0.3s ease !important;
         }
         
-        .stDownloadButton > button:hover {
+        .portfolio-page .stDownloadButton > button:hover {
             background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%) !important;
             transform: translateY(-3px) !important;
             box-shadow: 0 10px 25px rgba(76, 175, 80, 0.4) !important;
         }
         
-        /* Columns with subtle borders */
-        .stColumn {
+        /* Columns with subtle borders - scoped to portfolio page */
+        .portfolio-page .stColumn {
             background-color: transparent !important;
             border-radius: 10px !important;
         }
         
-        /* Markdown content styling */
-        .stMarkdown {
+        /* Markdown content styling - scoped to portfolio page */
+        .portfolio-page .stMarkdown {
             color: #ffffff !important;
         }
         
-        .stMarkdown h3 {
+        .portfolio-page .stMarkdown h3 {
             color: #00d4ff !important;
             text-shadow: 0 0 8px rgba(0, 212, 255, 0.4) !important;
         }
         
-        .stMarkdown p {
+        .portfolio-page .stMarkdown p {
             color: #e0e0e0 !important;
             line-height: 1.6 !important;
         }
         
-        .stMarkdown li {
+        .portfolio-page .stMarkdown li {
             color: #e0e0e0 !important;
         }
         
-        /* Scrollbar styling */
-        ::-webkit-scrollbar {
+        /* Scrollbar styling - scoped to portfolio page content */
+        .portfolio-page ::-webkit-scrollbar {
             width: 8px;
         }
         
-        ::-webkit-scrollbar-track {
+        .portfolio-page ::-webkit-scrollbar-track {
             background: #1a1a2e;
             border-radius: 4px;
         }
         
-        ::-webkit-scrollbar-thumb {
+        .portfolio-page ::-webkit-scrollbar-thumb {
             background: linear-gradient(135deg, #00d4ff, #4ecdc4);
             border-radius: 4px;
         }
         
-        ::-webkit-scrollbar-thumb:hover {
+        .portfolio-page ::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(135deg, #4ecdc4, #00d4ff);
         }
         
-        /* Responsive adjustments */
+        /* Responsive adjustments - scoped to portfolio page */
         @media (max-width: 768px) {
-            .main .block-container {
-                padding: 1rem !important;
+            .portfolio-page {
+                padding: 0.5rem !important;
             }
             
-            .page-header {
+            .portfolio-page .page-header {
                 margin: 0.5rem !important;
             }
         }
@@ -1550,6 +1704,9 @@ class ResumeApp:
         }
         </style>
         """, unsafe_allow_html=True)
+        
+        # Wrap the entire portfolio content in a scoped div
+        st.markdown('<div class="portfolio-page">', unsafe_allow_html=True)
         
         page_header(
             "Portfolio Generator",
@@ -1605,6 +1762,39 @@ class ResumeApp:
         
         if uploaded_file:
             st.success(f"✅ File uploaded: {uploaded_file.name}")
+            
+            # Save uploaded file to uploads directory
+            import os
+            from datetime import datetime
+            
+            uploads_dir = "uploads"
+            if not os.path.exists(uploads_dir):
+                os.makedirs(uploads_dir)
+            
+            # Create unique filename with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_extension = uploaded_file.name.split('.')[-1]
+            saved_filename = f"portfolio_{timestamp}.{file_extension}"
+            file_path = os.path.join(uploads_dir, saved_filename)
+            
+            # Save the file
+            try:
+                with open(file_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                
+                # Save file info to database
+                from config.database import save_uploaded_file_info
+                file_size = len(uploaded_file.getbuffer())
+                save_uploaded_file_info(
+                    filename=saved_filename,
+                    original_name=uploaded_file.name,
+                    file_path=file_path,
+                    file_size=file_size,
+                    file_type=uploaded_file.type,
+                    upload_source="Portfolio Generator"
+                )
+            except Exception as e:
+                st.warning(f"Could not save file: {str(e)}")
             
             # Generate portfolio button
             col1, col2, col3 = st.columns([1, 2, 1])
@@ -1874,6 +2064,9 @@ class ResumeApp:
             </div>
         </div>
         """, unsafe_allow_html=True)
+        
+        # Close the portfolio page wrapper
+        st.markdown('</div>', unsafe_allow_html=True)
 
     def render_about(self):
         """Render the about page"""
@@ -2215,6 +2408,39 @@ class ResumeApp:
                     """, unsafe_allow_html=True)
 
             if uploaded_file:
+                # Save uploaded file to uploads directory
+                import os
+                from datetime import datetime
+                
+                uploads_dir = "uploads"
+                if not os.path.exists(uploads_dir):
+                    os.makedirs(uploads_dir)
+                
+                # Create unique filename with timestamp
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                file_extension = uploaded_file.name.split('.')[-1]
+                saved_filename = f"standard_{timestamp}.{file_extension}"
+                file_path = os.path.join(uploads_dir, saved_filename)
+                
+                # Save the file
+                try:
+                    with open(file_path, "wb") as f:
+                        f.write(uploaded_file.getbuffer())
+                    
+                    # Save file info to database
+                    from config.database import save_uploaded_file_info
+                    file_size = len(uploaded_file.getbuffer())
+                    save_uploaded_file_info(
+                        filename=saved_filename,
+                        original_name=uploaded_file.name,
+                        file_path=file_path,
+                        file_size=file_size,
+                        file_type=uploaded_file.type,
+                        upload_source="Standard Analysis"
+                    )
+                except Exception as e:
+                    st.warning(f"Could not save file: {str(e)}")
+                
                 # Add a prominent analyze button
                 analyze_standard = st.button("🔍 Analyze My Resume",
                                     type="primary",
@@ -3247,6 +3473,39 @@ class ResumeApp:
 
                 if analyze_ai:
                     with st.spinner(f"Analyzing your resume with {ai_model}..."):
+                        # Save uploaded file to uploads directory
+                        import os
+                        from datetime import datetime
+                        
+                        uploads_dir = "uploads"
+                        if not os.path.exists(uploads_dir):
+                            os.makedirs(uploads_dir)
+                        
+                        # Create unique filename with timestamp
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        file_extension = uploaded_file.name.split('.')[-1]
+                        saved_filename = f"resume_{timestamp}.{file_extension}"
+                        file_path = os.path.join(uploads_dir, saved_filename)
+                        
+                        # Save the file
+                        try:
+                            with open(file_path, "wb") as f:
+                                f.write(uploaded_file.getbuffer())
+                            
+                            # Save file info to database
+                            from config.database import save_uploaded_file_info
+                            file_size = len(uploaded_file.getbuffer())
+                            save_uploaded_file_info(
+                                filename=saved_filename,
+                                original_name=uploaded_file.name,
+                                file_path=file_path,
+                                file_size=file_size,
+                                file_type=uploaded_file.type,
+                                upload_source="AI Analysis"
+                            )
+                        except Exception as e:
+                            st.warning(f"Could not save file: {str(e)}")
+                        
                         # Get file content
                         text = ""
                         try:
@@ -3330,15 +3589,152 @@ class ResumeApp:
                                     resume_score = analysis_result.get(
                                         "resume_score", 0)
                                     
-                                    # Save to database
-                                    save_ai_analysis_data(
-                                        None,  # No user_id needed
-                                        {
-                                            "model_used": ai_model,
-                                            "resume_score": resume_score,
-                                            "job_role": job_role
+                                    # Extract basic info from resume text for database
+                                    try:
+                                        # Simple extraction of email and name from resume text
+                                        import re
+                                        
+                                        # Extract email
+                                        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+                                        emails = re.findall(email_pattern, resume_text)
+                                        email = emails[0] if emails else "unknown@example.com"
+                                        
+                                        # Extract phone number (improved pattern)
+                                        phone_patterns = [
+                                            r'(?:Phone|Tel|Mobile|Cell):\s*([+]?[\d\s\-\(\)\.]{10,})',
+                                            r'([+]?[\d]{1,3}[-.\s]?[\(]?[\d]{3}[\)]?[-.\s]?[\d]{3}[-.\s]?[\d]{4})',
+                                            r'([+]?[\d\s\-\(\)\.]{10,})'
+                                        ]
+                                        phone = "Not provided"
+                                        for pattern in phone_patterns:
+                                            phones = re.findall(pattern, resume_text, re.IGNORECASE)
+                                            if phones:
+                                                phone = phones[0].strip()
+                                                break
+                                        
+                                        # Extract LinkedIn
+                                        linkedin_patterns = [
+                                            r'(?:LinkedIn|linkedin):\s*(https?://[^\s]+)',
+                                            r'(https?://(?:www\.)?linkedin\.com/in/[A-Za-z0-9-]+)',
+                                            r'linkedin\.com/in/([A-Za-z0-9-]+)'
+                                        ]
+                                        linkedin = ""
+                                        for pattern in linkedin_patterns:
+                                            matches = re.findall(pattern, resume_text, re.IGNORECASE)
+                                            if matches:
+                                                if matches[0].startswith('http'):
+                                                    linkedin = matches[0]
+                                                else:
+                                                    linkedin = f"https://linkedin.com/in/{matches[0]}"
+                                                break
+                                        
+                                        # Extract GitHub
+                                        github_patterns = [
+                                            r'(?:GitHub|github):\s*(https?://[^\s]+)',
+                                            r'(https?://(?:www\.)?github\.com/[A-Za-z0-9-]+)',
+                                            r'github\.com/([A-Za-z0-9-]+)'
+                                        ]
+                                        github = ""
+                                        for pattern in github_patterns:
+                                            matches = re.findall(pattern, resume_text, re.IGNORECASE)
+                                            if matches:
+                                                if matches[0].startswith('http'):
+                                                    github = matches[0]
+                                                else:
+                                                    github = f"https://github.com/{matches[0]}"
+                                                break
+                                        
+                                        # Extract Portfolio
+                                        portfolio_patterns = [
+                                            r'(?:Portfolio|Website|Site):\s*(https?://[^\s]+)',
+                                            r'(https?://[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:/[^\s]*)?)'
+                                        ]
+                                        portfolio = ""
+                                        for pattern in portfolio_patterns:
+                                            matches = re.findall(pattern, resume_text, re.IGNORECASE)
+                                            if matches:
+                                                # Skip common sites that are not portfolios
+                                                excluded_domains = ['linkedin.com', 'github.com', 'gmail.com', 'yahoo.com', 'outlook.com']
+                                                for match in matches:
+                                                    if not any(domain in match.lower() for domain in excluded_domains):
+                                                        portfolio = match
+                                                        break
+                                                if portfolio:
+                                                    break
+                                        
+                                        # Extract name (improved logic)
+                                        lines = resume_text.split('\n')
+                                        name = "Unknown"
+                                        for line in lines[:10]:  # Check first 10 lines
+                                            line = line.strip()
+                                            # Look for lines that could be names
+                                            if (len(line) > 2 and len(line) < 50 and 
+                                                not '@' in line and 
+                                                not 'http' in line.lower() and
+                                                not line.lower().startswith(('phone', 'email', 'address', 'linkedin', 'github')) and
+                                                line.lower() not in ['resume', 'cv', 'curriculum vitae', 'profile', 'summary', 'objective']):
+                                                # Check if it looks like a name (contains letters and possibly spaces)
+                                                if re.match(r'^[A-Za-z\s\.]+$', line) and len(line.split()) <= 4:
+                                                    name = line
+                                                    break
+                                        
+                                        # Create resume data
+                                        resume_data = {
+                                            'personal_info': {
+                                                'full_name': name,
+                                                'email': email,
+                                                'phone': phone,
+                                                'linkedin': linkedin,
+                                                'github': github,
+                                                'portfolio': portfolio
+                                            },
+                                            'summary': resume_text[:500] + "..." if len(resume_text) > 500 else resume_text,
+                                            'target_role': job_role,
+                                            'target_category': selected_category,
+                                            'education': [],
+                                            'experience': [],
+                                            'projects': [],
+                                            'skills': [],
+                                            'template': 'AI Analysis'
                                         }
-                                    )
+                                        
+                                        # Save resume data first
+                                        resume_id = save_resume_data(resume_data)
+                                        
+                                        if resume_id:
+                                            # Now save AI analysis with proper resume_id
+                                            save_ai_analysis_data(
+                                                resume_id,
+                                                {
+                                                    "model_used": ai_model,
+                                                    "resume_score": resume_score,
+                                                    "job_role": job_role
+                                                }
+                                            )
+                                            
+                                            # Also save basic analysis data
+                                            analysis_data = {
+                                                'resume_id': resume_id,
+                                                'ats_score': resume_score,
+                                                'keyword_match_score': resume_score,
+                                                'format_score': resume_score,
+                                                'section_score': resume_score,
+                                                'missing_skills': '',
+                                                'recommendations': f'AI Analysis completed with {ai_model}'
+                                            }
+                                            save_analysis_data(resume_id, analysis_data)
+                                        
+                                    except Exception as e:
+                                        print(f"Error saving resume data: {e}")
+                                        # Fallback: save AI analysis without resume link
+                                        save_ai_analysis_data(
+                                            None,
+                                            {
+                                                "model_used": ai_model,
+                                                "resume_score": resume_score,
+                                                "job_role": job_role
+                                            }
+                                        )
                                 # show snowflake effect
                                 st.snow()
 
@@ -3800,7 +4196,18 @@ class ResumeApp:
         
         # Admin login/logout in sidebar
         with st.sidebar:
-            st_lottie(self.load_lottie_url("https://assets5.lottiefiles.com/packages/lf20_xyadoh9h.json"), height=200, key="sidebar_animation")
+            # Load Lottie animation with fallback
+            lottie_animation = self.load_lottie_url("https://assets5.lottiefiles.com/packages/lf20_xyadoh9h.json")
+            if lottie_animation:
+                st_lottie(lottie_animation, height=200, key="sidebar_animation")
+            else:
+                # Fallback when animation can't be loaded
+                st.markdown("""
+                    <div style="text-align: center; padding: 20px;">
+                        <h1 style="color: #4CAF50; font-size: 3em;">🚀</h1>
+                        <p style="color: #E0E0E0;">Smart Resume AI</p>
+                    </div>
+                """, unsafe_allow_html=True)
             st.title("Smart Resume AI")
             st.markdown("---")
             

@@ -1,6 +1,6 @@
 <p><small>Best View in <a href="https://github.com/settings/appearance">Dark Mode</a> (Recommended)</small></p><br/>
 
-<img src="https://socialify.git.ci/Hunterdii/Smart-AI-Resume-Analyzer/image?custom_description=6th+Sem+Final+Year+Project+at+Parul+University+%282024-2025%29&description=1&font=Bitter&language=1&name=1&pattern=Circuit+Board&stargazers=1&theme=Dark&pattern=Transparent" alt="Smart-AI-Resume-Analyzer" width="1150" />
+<img src="https://socialify.git.ci/Hunterdii/Smart-AI-Resume-Analyzer/image?custom_description=8th+Sem+Final+Year+Project+at+BGSIT+%282024-2025%29&description=1&font=Bitter&language=1&name=1&pattern=Circuit+Board&stargazers=1&theme=Dark&pattern=Transparent" alt="Smart-AI-Resume-Analyzer" width="1150" />
 
 <div align="center">
 
@@ -58,7 +58,7 @@
      </small>
   </p>
   <small align="justify"><img src="https://github.com/user-attachments/assets/76906dbc-343d-4267-ace5-048d428fff42" width="20px"> A Project Submitted for the fulfilment of the degree BE at 
-    <a href="https://paruluniversity.ac.in/">BGS INSTITUTE OF TECHNOLOGY</a> during academic year 2025-26
+    <a href="https://www.bgsit.ac.in/">BGS INSTITUTE OF TECHNOLOGY</a> during academic year 2025-26
   </small>
 </div><br/><br/>
 </div>
@@ -305,17 +305,19 @@ streamlit run app.py
 ## Admin Login Credentials
 
 ### 🔹 Admin Login Credentials:
+
 HERE Login Credentials ARE JUST EXAMPLE YOU HAVE TO CHANGE IT
+
 - **Username:**
 
 ```python3
-sanjaymain.com
+sanjay@main.com
 ```
 
 - **Password:**
 
 ```python3
-sanjay26
+sanjay2026
 ```
 
 ⚠️ **SECURITY NOTE**: These credentials are automatically created when the app starts for the first time.
@@ -702,7 +704,7 @@ Explore the code, contribute, or drop a <img src="https://github.com/user-attach
 
 If you appreciate this repository and want to show your support, you can do so through these platforms:
 
-| ❤️ **Platform**     | 🌟 **Support Link**                                                                                                                         |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |                        |
+| ❤️ **Platform** | 🌟 **Support Link** |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | |
 
 **Thank you for your support! Every bit helps keep this repository going.** 🌈✨

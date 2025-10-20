@@ -245,6 +245,16 @@ class FeedbackManager:
                 }
                 self.save_feedback(feedback_data)
                 
+                # Also save to main database for admin dashboard
+                try:
+                    import sys
+                    import os
+                    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                    from config.database import save_feedback_to_main_db
+                    save_feedback_to_main_db(feedback_data)
+                except Exception as e:
+                    print(f"Error saving to main database: {e}")
+                
                 # Clear progress elements
                 progress_bar.empty()
                 status_text.empty()

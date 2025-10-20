@@ -912,7 +912,7 @@ class DashboardManager:
             LIMIT 1
         """)
         top_category = cursor.fetchone()
-        if top_category:
+        if top_category and len(top_category) >= 3 and top_category[0]:
             insights.append({
                 'title': 'Top Performing Category',
                 'icon': '🏆',
@@ -920,6 +920,15 @@ class DashboardManager:
                 'trend_class': 'trend-up',
                 'trend_icon': '↑',
                 'trend_value': f"{top_category[1]:.1f}%"
+            })
+        else:
+            insights.append({
+                'title': 'Top Performing Category',
+                'icon': '🏆',
+                'description': "No category data available yet. Upload and analyze resumes to see top performing categories.",
+                'trend_class': 'trend-neutral',
+                'trend_icon': '📊',
+                'trend_value': "No data"
             })
         
         # Recent Improvement
@@ -931,7 +940,7 @@ class DashboardManager:
                  WHERE created_at < date('now', '-7 days')) as old_score
         """)
         scores = cursor.fetchone()
-        if scores and scores[0] and scores[1]:
+        if scores and scores[0] is not None and scores[1] is not None:
             change = scores[0] - scores[1]
             insights.append({
                 'title': 'Weekly Trend',
@@ -940,6 +949,15 @@ class DashboardManager:
                 'trend_class': 'trend-up' if change >= 0 else 'trend-down',
                 'trend_icon': '↑' if change >= 0 else '↓',
                 'trend_value': f"{abs(change):.1f}%"
+            })
+        else:
+            insights.append({
+                'title': 'Weekly Trend',
+                'icon': '📈',
+                'description': "Not enough data to show weekly trends. Upload more resumes to see progress over time.",
+                'trend_class': 'trend-neutral',
+                'trend_icon': '📊',
+                'trend_value': "No data"
             })
         
         # Most Common Skills
@@ -968,15 +986,39 @@ class DashboardManager:
             LIMIT 3
         """)
         top_skills = cursor.fetchall()
-        if top_skills:
-            skills_text = f"Most in-demand skills: Python ({top_skills[0][1]} resumes), Java ({top_skills[1][1]} resumes), Express ({top_skills[2][1]} resumes)"
+        if top_skills and len(top_skills) >= 3:
+            skills_text = f"Most in-demand skills: {top_skills[0][0]} ({top_skills[0][1]} resumes), {top_skills[1][0]} ({top_skills[1][1]} resumes), {top_skills[2][0]} ({top_skills[2][1]} resumes)"
             insights.append({
                 'title': 'Top Skills',
                 'icon': '💡',
-                'description': f"Most in-demand skills: {skills_text}",
+                'description': skills_text,
                 'trend_class': 'trend-up',
                 'trend_icon': '🔝',
                 'trend_value': f"Top {len(top_skills)}"
+            })
+        elif top_skills and len(top_skills) > 0:
+            # Handle cases with fewer than 3 skills
+            skills_list = []
+            for i, skill in enumerate(top_skills):
+                skills_list.append(f"{skill[0]} ({skill[1]} resumes)")
+            skills_text = "Most in-demand skills: " + ", ".join(skills_list)
+            insights.append({
+                'title': 'Top Skills',
+                'icon': '💡',
+                'description': skills_text,
+                'trend_class': 'trend-up',
+                'trend_icon': '🔝',
+                'trend_value': f"Top {len(top_skills)}"
+            })
+        else:
+            # No skills data available
+            insights.append({
+                'title': 'Top Skills',
+                'icon': '💡',
+                'description': "No skills data available yet. Upload and analyze resumes to see top skills.",
+                'trend_class': 'trend-neutral',
+                'trend_icon': '📊',
+                'trend_value': "No data"
             })
         
         return insights

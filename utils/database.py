@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import datetime
+from datetime import datetime
 import json
 
 # Create the base class for declarative models
@@ -15,8 +15,8 @@ class Resume(Base):
     user_id = Column(String(100))
     job_role = Column(String(100))
     content = Column(Text)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 # Define the Analysis model
 class Analysis(Base):
@@ -25,7 +25,7 @@ class Analysis(Base):
     id = Column(Integer, primary_key=True)
     resume_id = Column(Integer)
     analysis_data = Column(Text)  # Store JSON data
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class AIAnalysis(Base):
     __tablename__ = 'ai_analyses'
@@ -35,7 +35,7 @@ class AIAnalysis(Base):
     model_used = Column(String(100))
     resume_score = Column(Integer)
     job_role = Column(String(100))
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class DatabaseManager:
     def __init__(self, db_path='resume_data.db'):

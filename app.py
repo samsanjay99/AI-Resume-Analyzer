@@ -5,7 +5,7 @@ import os
 import time
 from PIL import Image
 from jobs.job_search import render_job_search
-import datetime
+from datetime import datetime
 from ui_components import (
     apply_modern_styles, hero_section, feature_card, about_section,
     page_header, render_analytics_section, render_activity_section,
@@ -570,7 +570,6 @@ class ResumeApp:
         import pandas as pd
         import plotly.express as px
         import plotly.graph_objects as go
-        from datetime import datetime
         import os
         
         st.markdown("## 👑 Admin Dashboard")
@@ -957,7 +956,7 @@ class ResumeApp:
                 st.session_state.resume_data = {
                     'filename': uploaded_file.name,
                     'content': resume_text,
-                    'upload_time': datetime.datetime.now().isoformat()
+                    'upload_time': datetime.now().isoformat()
                 }
 
                 # Analyze resume
@@ -1765,7 +1764,6 @@ class ResumeApp:
             
             # Save uploaded file to uploads directory
             import os
-            from datetime import datetime
             
             uploads_dir = "uploads"
             if not os.path.exists(uploads_dir):
@@ -1825,7 +1823,7 @@ class ResumeApp:
                         result = self.portfolio_generator.generate_portfolio_with_ai(
                             resume_text, 
                             self.ai_analyzer,
-                            user_id=f"user_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                            user_id=f"user_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
                         )
                         
                         if result['success']:
@@ -2410,7 +2408,6 @@ class ResumeApp:
             if uploaded_file:
                 # Save uploaded file to uploads directory
                 import os
-                from datetime import datetime
                 
                 uploads_dir = "uploads"
                 if not os.path.exists(uploads_dir):
@@ -3069,7 +3066,7 @@ class ResumeApp:
                             # Create mock data for timeline
                             import numpy as np
 
-                            today = datetime.datetime.now()
+                            today = datetime.now()
                             dates = [
     (today -
     datetime.timedelta(
@@ -3400,7 +3397,7 @@ class ResumeApp:
 
                                 # Format the date
                                 try:
-                                    date_obj = datetime.datetime.strptime(
+                                    date_obj = datetime.strptime(
                                         analysis["date"], "%Y-%m-%d %H:%M:%S")
                                     formatted_date = date_obj.strftime(
                                         "%b %d, %Y")
@@ -3475,7 +3472,6 @@ class ResumeApp:
                     with st.spinner(f"Analyzing your resume with {ai_model}..."):
                         # Save uploaded file to uploads directory
                         import os
-                        from datetime import datetime
                         
                         uploads_dir = "uploads"
                         if not os.path.exists(uploads_dir):
@@ -3762,7 +3758,7 @@ class ResumeApp:
                                     st.markdown("## Full Analysis Report")
                                     
                                     # Get current date
-                                    current_date = datetime.datetime.now().strftime("%B %d, %Y")
+                                    current_date = datetime.now().strftime("%B %d, %Y")
                                     
                                     # Create a modern styled header for the report
                                     st.markdown(f"""
@@ -4101,7 +4097,7 @@ class ResumeApp:
                                         st.download_button(
                                             label="📊 Download PDF Report",
                                             data=pdf_buffer,
-                                            file_name=f"resume_analysis_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                                            file_name=f"resume_analysis_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
                                             mime="application/pdf",
                                             use_container_width=True,
                                             on_click=lambda: st.balloons()

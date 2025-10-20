@@ -1,6 +1,7 @@
 import os
 import streamlit as st
 from dotenv import load_dotenv
+from datetime import datetime
 import google.generativeai as genai
 import pdfplumber
 import tempfile
@@ -800,7 +801,7 @@ class AIResumeAnalyzer:
             content = []
             
             # Add a header with date
-            current_date = datetime.datetime.now().strftime("%B %d, %Y")
+            current_date = datetime.now().strftime("%B %d, %Y")
             content.append(Paragraph(f"Resume Analysis Report", title_style))
             content.append(Paragraph(f"Generated on {current_date}", subtitle_style))
             content.append(Spacer(1, 0.25*inch))
@@ -1281,7 +1282,7 @@ class AIResumeAnalyzer:
                 
                 # Add generation date at the bottom
                 canvas.setFont('Helvetica', 9)
-                date_text = f"Generated on: {datetime.datetime.now().strftime('%B %d, %Y')}"
+                date_text = f"Generated on: {datetime.now().strftime('%B %d, %Y')}"
                 canvas.drawString(0.5*inch, 0.25*inch, date_text)
                 
                 canvas.restoreState()
@@ -1747,7 +1748,7 @@ class AIResumeAnalyzer:
             content = []
             
             # Add a header with date
-            current_date = datetime.datetime.now().strftime("%B %d, %Y")
+            current_date = datetime.now().strftime("%B %d, %Y")
             content.append(Paragraph(f"Resume Analysis Report", title_style))
             content.append(Paragraph(f"Generated on {current_date}", subtitle_style))
             content.append(Spacer(1, 0.25*inch))
@@ -2044,7 +2045,7 @@ class AIResumeAnalyzer:
                 
                 # Add generation date at the bottom
                 canvas.setFont('Helvetica', 9)
-                date_text = f"Generated on: {datetime.datetime.now().strftime('%B %d, %Y')}"
+                date_text = f"Generated on: {datetime.now().strftime('%B %d, %Y')}"
                 canvas.drawString(0.5*inch, 0.25*inch, date_text)
                 
                 canvas.restoreState()

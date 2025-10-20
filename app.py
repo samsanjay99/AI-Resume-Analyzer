@@ -1807,6 +1807,9 @@ class ResumeApp:
             if generate_portfolio:
                 with st.spinner("🔄 Generating your portfolio..."):
                     try:
+                        # Initialize result variable to avoid UnboundLocalError
+                        result = None
+                        
                         # Extract text from uploaded file
                         if uploaded_file.type == "application/pdf":
                             resume_text = self.ai_analyzer.extract_text_from_pdf(uploaded_file)
@@ -1840,7 +1843,7 @@ class ResumeApp:
                             user_id=f"user_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
                         )
                         
-                        if result['success']:
+                        if result and result.get('success', False):
                             st.success("🎉 Portfolio generated successfully!")
                             
                             # Store result in session state for preview and download
@@ -1955,55 +1958,102 @@ class ResumeApp:
                                 # Cleanup option
                                 st.markdown("### 🧹 Cleanup")
                                 if st.button("🗑️ Clear Generated Files", help="Remove generated files from server"):
-                                    self.portfolio_generator.cleanup_generated_portfolio(result['user_id'])
+                                    if result and 'user_id' in result:
+                                        self.portfolio_generator.cleanup_generated_portfolio(result['user_id'])
                                     if 'portfolio_result' in st.session_state:
                                         del st.session_state.portfolio_result
                                     st.success("✅ Files cleaned up successfully!")
                                     st.rerun()
                         
-                        else:
-                            st.error(f"❌ {result['message']}")
+                        elif result:
+                            st.error(f"❌ {result.get('message', 'Portfolio generation failed')}")
                             if 'error' in result:
                                 st.error(f"Error details: {result['error']}")
+                        else:
+                            st.error("❌ Portfolio generation failed - no result returned")
                     
                     except Exception as e:
                         st.error(f"❌ An error occurred while generating the portfolio: {str(e)}")
                         print(f"Portfolio generation error: {str(e)}")
+                        return  # Exit the function to prevent further execution
         
         # Show existing portfolio result if available
         elif 'portfolio_result' in st.session_state:
-            result = st.session_state.portfolio_result
-            st.subheader("🎯 Your Previously Generated Portfolio")
-            
-            # Create tabs for preview and download
-            preview_tab, download_tab = st.tabs(["🖥️ Preview", "📥 Download"])
-            
-            with preview_tab:
-                st.markdown("### 👀 Portfolio Preview")
-                html_content = result['html_content']
-                st.components.v1.html(html_content, height=600, scrolling=True)
-            
-            with download_tab:
-                st.markdown("### 📦 Download Your Portfolio")
-                portfolio_data = result['portfolio_data']
+            try:
+                result = st.session_state.portfolio_result
                 
-                if os.path.exists(result['zip_path']):
-                    with open(result['zip_path'], 'rb') as file:
-                        zip_data = file.read()
+                # Validate that result has required keys and is properly structured
+                required_keys = ['html_content', 'portfolio_data', 'zip_path', 'success']
+                if not isinstance(result, dict) or not all(key in result for key in required_keys):
+                    st.warning("⚠️ Previous portfolio data is incomplete. Please generate a new portfolio.")
+                    if st.button("🗑️ Clear Incomplete Data"):
+                        del st.session_state.portfolio_result
+                        st.rerun()
+                    return
+                
+                # Check if the result indicates success
+                if not result.get('success', False):
+                    st.error(f"❌ Previous portfolio generation failed: {result.get('message', 'Unknown error')}")
+                    if st.button("🗑️ Clear Failed Data"):
+                        del st.session_state.portfolio_result
+                        st.rerun()
+                    return
+                
+                st.subheader("🎯 Your Previously Generated Portfolio")
+                
+                # Create tabs for preview and download
+                preview_tab, download_tab = st.tabs(["🖥️ Preview", "📥 Download"])
+                
+                with preview_tab:
+                    st.markdown("### 👀 Portfolio Preview")
+                    html_content = result.get('html_content', '')
+                    if html_content:
+                        st.components.v1.html(html_content, height=600, scrolling=True)
+                    else:
+                        st.error("❌ Portfolio preview not available")
+                
+                with download_tab:
+                    st.markdown("### 📦 Download Your Portfolio")
+                    portfolio_data = result.get('portfolio_data', {})
+                    zip_path = result.get('zip_path', '')
                     
-                    st.download_button(
-                        label="📥 Download Portfolio (.zip)",
-                        data=zip_data,
-                        file_name=f"{portfolio_data.get('FULL_NAME', 'Portfolio').replace(' ', '_')}_portfolio.zip",
-                        mime="application/zip",
-                        type="primary",
-                        use_container_width=True
-                    )
-                
-                if st.button("🗑️ Clear Generated Files"):
-                    self.portfolio_generator.cleanup_generated_portfolio(result['user_id'])
+                    if zip_path and os.path.exists(zip_path):
+                        try:
+                            with open(zip_path, 'rb') as file:
+                                zip_data = file.read()
+                            
+                            st.download_button(
+                                label="📥 Download Portfolio (.zip)",
+                                data=zip_data,
+                                file_name=f"{portfolio_data.get('FULL_NAME', 'Portfolio').replace(' ', '_')}_portfolio.zip",
+                                mime="application/zip",
+                                type="primary",
+                                use_container_width=True
+                            )
+                        except Exception as e:
+                            st.error(f"❌ Error reading portfolio file: {str(e)}")
+                    else:
+                        st.warning("⚠️ Portfolio file not found. It may have been cleaned up or moved.")
+                    
+                    if st.button("🗑️ Clear Generated Files"):
+                        try:
+                            user_id = result.get('user_id')
+                            if user_id:
+                                self.portfolio_generator.cleanup_generated_portfolio(user_id)
+                            del st.session_state.portfolio_result
+                            st.success("✅ Files cleaned up successfully!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Error during cleanup: {str(e)}")
+                            # Still remove from session state even if cleanup fails
+                            del st.session_state.portfolio_result
+                            st.rerun()
+            
+            except Exception as e:
+                st.error(f"❌ Error displaying previous portfolio: {str(e)}")
+                st.info("💡 Try generating a new portfolio.")
+                if st.button("🗑️ Clear Error Data"):
                     del st.session_state.portfolio_result
-                    st.success("✅ Files cleaned up successfully!")
                     st.rerun()
         
         # Enhanced feature showcase with tech styling

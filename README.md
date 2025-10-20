@@ -306,17 +306,15 @@ streamlit run app.py
 
 ### 🔹 Admin Login Credentials:
 
-HERE Login Credentials ARE JUST EXAMPLE YOU HAVE TO CHANGE IT
+- **Email:**
 
-- **Username:**
-
-```python3
-sanjay@main.com
+```
+sam@gmail.com
 ```
 
 - **Password:**
 
-```python3
+```
 sanjay2026
 ```
 

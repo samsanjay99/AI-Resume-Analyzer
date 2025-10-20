@@ -16,7 +16,19 @@ heroku create your-app-name
 git push heroku main
 ```
 
-### 3. Railway Deployment
+### 3. Render Deployment (Recommended for Docker)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/samsanjay99/AI-Resume-Analyzer)
+
+**Manual Steps:**
+1. Go to [render.com](https://render.com)
+2. Create new Web Service
+3. Connect GitHub repository
+4. Select Docker environment
+5. Add environment variables
+
+**See detailed guide:** [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md)
+
+### 4. Railway Deployment
 1. Go to [railway.app](https://railway.app)
 2. Connect GitHub repository
 3. Deploy automatically

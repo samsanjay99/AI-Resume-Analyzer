@@ -1819,6 +1819,20 @@ class ResumeApp:
                             st.error("❌ Could not extract text from the uploaded file. Please try a different file.")
                             return
                         
+                        # Check if API key is available for AI portfolio generation
+                        if not hasattr(self.ai_analyzer, 'google_api_key') or not self.ai_analyzer.google_api_key:
+                            st.warning("🔑 **Google API Key Required for AI Portfolio Generation**")
+                            st.info("""
+                            **To generate AI-powered portfolios, you need a Google Gemini API key.**
+                            
+                            **For Streamlit Cloud:**
+                            1. Go to your app settings → Secrets
+                            2. Add: `GOOGLE_API_KEY = "your_api_key_here"`
+                            3. Get your free API key from: [Google AI Studio](https://aistudio.google.com/app/apikey)
+                            
+                            **Alternative:** The portfolio will be generated with basic extracted data.
+                            """)
+                        
                         # Generate portfolio using AI
                         result = self.portfolio_generator.generate_portfolio_with_ai(
                             resume_text, 
@@ -2802,6 +2816,33 @@ class ResumeApp:
             # AI Model Selection
             # Get available models from AI analyzer
             available_models = self.ai_analyzer.get_available_models()
+            
+            # Check if API keys are configured
+            if "⚠️ No API Keys Configured" in available_models:
+                st.error("🔑 **API Keys Required for AI Analysis**")
+                st.markdown("""
+                **To use AI-powered resume analysis, you need to configure API keys:**
+                
+                1. **Google Gemini API Key** (Recommended):
+                   - Get your free API key from: [Google AI Studio](https://aistudio.google.com/app/apikey)
+                   - Add it as `GOOGLE_API_KEY` in Streamlit Cloud secrets
+                
+                2. **A4F API Key** (Optional - for additional models):
+                   - Get your API key from: [A4F API](https://api.a4f.co)
+                   - Add it as `A4F_API_KEY` in Streamlit Cloud secrets
+                
+                **For Streamlit Cloud deployment:**
+                - Go to your app settings → Secrets
+                - Add: `GOOGLE_API_KEY = "your_api_key_here"`
+                """)
+                
+                # Show a demo mode option
+                st.info("💡 **Demo Mode**: You can still use the standard resume analyzer without AI features.")
+                if st.button("🔍 Use Standard Analyzer Instead"):
+                    st.session_state.page = 'analyzer'
+                    st.rerun()
+                return
+            
             ai_model = st.selectbox(
                 "Select AI Model",
                 available_models,

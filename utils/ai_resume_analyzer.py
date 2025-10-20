@@ -80,7 +80,10 @@ class AIResumeAnalyzer:
                 "Hunyuan A13B"
             ])
         
-        return models if models else ["Google Gemini"]  # Default fallback
+        # Return available models or show configuration needed message
+        if not models:
+            return ["⚠️ No API Keys Configured"]
+        return models
     
     def clean_markdown(self, text):
         """Helper function to clean markdown formatting"""

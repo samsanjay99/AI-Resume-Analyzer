@@ -185,6 +185,11 @@ Return the JSON object with all fields filled based on the resume content above.
     def fill_missing_data_with_ai(self, resume_text: str, extracted_data: Dict, ai_analyzer) -> Dict[str, Any]:
         """Use AI to intelligently fill missing resume fields"""
         try:
+            # Check if AI analyzer has API key configured
+            if not hasattr(ai_analyzer, 'google_api_key') or not ai_analyzer.google_api_key:
+                print("No Google API key configured, using fallback data generation")
+                return self.create_fallback_data(extracted_data)
+            
             # Prepare prompt with resume content
             prompt = self.ai_prompt_template.format(resume_content=resume_text)
             

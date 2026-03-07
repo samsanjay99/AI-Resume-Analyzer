@@ -3,7 +3,13 @@
 ## 🎯 Quick Fix Applied
 
 **Issue**: `ModuleNotFoundError: No module named 'dotenv'`
-**Solution**: Added `requirements.txt` with all dependencies ✅
+**Solution**: Added deployment configuration files ✅
+
+### New Files Added:
+- ✅ `requirements.txt` - Python dependencies with compatible versions
+- ✅ `runtime.txt` - Specifies Python 3.11 (more stable than 3.13)
+- ✅ `.python-version` - Python version for deployment
+- ✅ `packages.txt` - System-level dependencies (tesseract, poppler, chromium)
 
 ---
 
@@ -11,7 +17,9 @@
 
 ### 1. Repository Setup ✅
 - [x] Code pushed to GitHub
-- [x] requirements.txt added
+- [x] requirements.txt added with compatible versions
+- [x] runtime.txt specifies Python 3.11
+- [x] packages.txt for system dependencies
 - [x] .gitignore configured
 
 ### 2. Streamlit Cloud Setup
@@ -71,6 +79,16 @@
 ---
 
 ## 🚨 Troubleshooting
+
+### Python Version Issues
+
+**If you see Python 3.13 errors:**
+```
+Error: No module named 'dotenv' (Python 3.13)
+```
+**Fix**: We've added `runtime.txt` to force Python 3.11
+- Streamlit Cloud will use Python 3.11 instead of 3.13
+- Python 3.11 has better compatibility with all dependencies
 
 ### App Won't Start
 

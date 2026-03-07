@@ -161,7 +161,7 @@ class ResumeAnalyzer:
         
     def extract_text_from_pdf(self, file):
         try:
-            import pypdf as PyPDF2
+            import PyPDF2
             import io
             
             # Create a PDF reader object

@@ -142,13 +142,13 @@ class AIResumeAnalyzer:
                 os.unlink(temp_path)  # Clean up the temp file
                 return text.strip()
             
-            # Try pypdf as a fallback
-            st.info("Trying pypdf extraction method...")
+            # Try PyPDF2 as a fallback
+            st.info("Trying PyPDF2 extraction method...")
             try:
-                import pypdf
+                import PyPDF2
                 pdf_text = ""
                 with open(temp_path, 'rb') as file:
-                    pdf_reader = pypdf.PdfReader(file)
+                    pdf_reader = PyPDF2.PdfReader(file)
                     for page in pdf_reader.pages:
                         page_text = page.extract_text()
                         if page_text:

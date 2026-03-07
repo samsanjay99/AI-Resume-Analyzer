@@ -126,9 +126,10 @@ Forces Streamlit Cloud to use Python 3.11 instead of latest (3.13)
 ```
 tesseract-ocr
 poppler-utils
-chromium-chromedriver
 ```
-System-level dependencies for PDF and web features
+System-level dependencies for PDF text extraction and processing.
+
+Note: ChromeDriver not included - job scraping features have graceful fallbacks.
 
 ### requirements.txt (key changes)
 ```python

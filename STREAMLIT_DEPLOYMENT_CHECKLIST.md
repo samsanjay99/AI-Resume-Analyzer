@@ -9,7 +9,7 @@
 - ✅ `requirements.txt` - Python dependencies with compatible versions
 - ✅ `runtime.txt` - Specifies Python 3.11 (more stable than 3.13)
 - ✅ `.python-version` - Python version for deployment
-- ✅ `packages.txt` - System-level dependencies (tesseract, poppler, chromium)
+- ✅ `packages.txt` - System-level dependencies (tesseract, poppler for PDF processing)
 
 ---
 

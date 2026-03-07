@@ -24,12 +24,13 @@ Backup Python version specification:
 ```
 
 ### 3. Created `packages.txt`
-System-level dependencies for PDF processing and web scraping:
+System-level dependencies for PDF processing:
 ```
 tesseract-ocr
 poppler-utils
-chromium-chromedriver
 ```
+
+Note: ChromeDriver removed - Selenium features have graceful fallbacks and work without it.
 
 ### 4. Updated `requirements.txt`
 Changed from exact versions to compatible ranges:

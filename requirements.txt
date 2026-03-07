@@ -22,6 +22,7 @@ Pillow>=10.0.0
 
 # Data Processing
 pandas>=2.0.0
+numpy>=1.24.0
 
 # Visualization
 plotly>=5.0.0
@@ -30,8 +31,17 @@ plotly>=5.0.0
 requests>=2.31.0
 beautifulsoup4>=4.12.0
 
+# Authentication & Security
+bcrypt>=4.0.0
+
+# Utilities
+schedule>=1.2.0
+
 # Streamlit Components
 streamlit-lottie>=0.0.5
 streamlit-option-menu>=0.3.0
+streamlit-extras>=0.3.0
+
+
 
 

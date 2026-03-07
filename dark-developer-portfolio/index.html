@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="title" content="{{FULL_NAME}} - Portfolio" />
+  <meta name="description" content="Discover {{FULL_NAME}}'s professional portfolio showcasing expertise, projects, skills, and achievements." />
+  <meta name="keywords" content="{{FULL_NAME}}, Portfolio, {{PRIMARY_SKILLS}}, Projects, Education, Achievements, Certifications" />
+  <meta name="author" content="{{FULL_NAME}}" />
+  <title>{{FULL_NAME}} :: Dark Dev Portfolio</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Styles -->
+  <link rel="stylesheet" href="main.css" />
+</head>
+<body>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="loading-screen">
+    <div class="loading-content">
+      <div class="loading-prompt">$ initializing {{FIRST_NAME}}.portfolio...</div>
+      <div class="loading-progress-text">loading assets — please wait</div>
+      <div class="loading-bar"><div class="loading-progress"></div></div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <div class="nav-logo">
+        <span class="prompt">~/</span>
+        <span>{{FIRST_NAME}}</span>
+        <span class="cursor-blink"></span>
+      </div>
+      <div class="nav-menu" id="nav-menu">
+        <a href="#home" class="nav-link" data-section="home" data-index="01">home</a>
+        <a href="#about" class="nav-link" data-section="about" data-index="02">about</a>
+        <a href="#skills" class="nav-link" data-section="skills" data-index="03">skills</a>
+        <a href="#experience" class="nav-link" data-section="experience" data-index="04">experience</a>
+        <a href="#projects" class="nav-link" data-section="projects" data-index="05">projects</a>
+        <a href="#contact" class="nav-terminal-btn">./contact</a>
+      </div>
+      <div class="nav-toggle" id="nav-toggle">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section id="home" class="hero-section">
+    <div class="hero-inner">
+
+      <!-- Text Side -->
+      <div class="animate-on-scroll">
+        <div class="hero-label">Full-Stack Developer</div>
+        <h1 class="hero-name">{{FULL_NAME}}</h1>
+        <div class="hero-title-line">
+          <span class="prefix">role:</span>
+          <span id="typewriter">{{JOB_TITLE}}</span>
+          <span class="cursor">_</span>
+        </div>
+        <p class="hero-description">{{PROFESSIONAL_SUMMARY}}</p>
+
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-number">{{YEARS_EXPERIENCE}}+</span>
+            <span class="stat-label">Years Exp.</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">{{PROJECT_COUNT}}+</span>
+            <span class="stat-label">Projects</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">{{SKILL_COUNT}}+</span>
+            <span class="stat-label">Technologies</span>
+          </div>
+        </div>
+
+        <div class="hero-buttons">
+          <a href="#contact" class="btn btn-primary"><i class="fas fa-terminal"></i> Get In Touch</a>
+          <a href="{{RESUME_DOWNLOAD_LINK}}" class="btn btn-secondary" download><i class="fas fa-download"></i> Download CV</a>
+        </div>
+
+        <div class="social-links">
+          <a href="{{LINKEDIN_URL}}" class="social-link" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+          <a href="{{GITHUB_URL}}" class="social-link" target="_blank"><i class="fab fa-github"></i></a>
+          <a href="{{TWITTER_URL}}" class="social-link" target="_blank"><i class="fab fa-twitter"></i></a>
+          <a href="mailto:{{EMAIL}}" class="social-link"><i class="fas fa-envelope"></i></a>
+        </div>
+      </div>
+
+      <!-- Terminal Widget -->
+      <div class="hero-terminal animate-on-scroll delay-3">
+        <div class="terminal-header">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-dot yellow"></div>
+          <div class="terminal-dot green"></div>
+          <div class="terminal-title">about-me.json</div>
+        </div>
+        <div class="terminal-body">
+          <div class="terminal-line">
+            <span class="t-prompt">$</span>
+            <span class="t-cmd">cat</span>
+            <span style="color:var(--text-mid);margin-left:6px;">developer.json</span>
+          </div>
+          <div style="height:8px;"></div>
+          <div class="terminal-line"><span class="t-bracket">{</span></div>
+          <div class="terminal-line t-indent"><span class="t-key">"name"</span><span class="t-colon">:</span><span class="t-string">"{{FULL_NAME}}"</span><span style="color:var(--text-dim)">,</span></div>
+          <div class="terminal-line t-indent"><span class="t-key">"role"</span><span class="t-colon">:</span><span class="t-string">"{{JOB_TITLE}}"</span><span style="color:var(--text-dim)">,</span></div>
+          <div class="terminal-line t-indent"><span class="t-key">"location"</span><span class="t-colon">:</span><span class="t-string">"{{LOCATION}}"</span><span style="color:var(--text-dim)">,</span></div>
+          <div class="terminal-line t-indent"><span class="t-key">"experience"</span><span class="t-colon">:</span><span style="color:#f6c177;">"{{YEARS_EXPERIENCE}}+ years"</span><span style="color:var(--text-dim)">,</span></div>
+          <div class="terminal-line t-indent"><span class="t-key">"status"</span><span class="t-colon">:</span><span class="t-string">"open to work"</span><span style="color:var(--text-dim)">,</span></div>
+          <div class="terminal-line t-indent"><span class="t-key">"email"</span><span class="t-colon">:</span><span class="t-string">"{{EMAIL}}"</span></div>
+          <div class="terminal-line"><span class="t-bracket">}</span></div>
+          <div style="height:8px;"></div>
+          <div class="terminal-line">
+            <span class="t-prompt">$</span>
+            <span id="terminal-cursor" style="display:inline-block;width:8px;height:14px;background:var(--neon);animation:blink 1s step-end infinite;vertical-align:middle;margin-left:6px;"></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- About Section -->
+  <section id="about" class="section-wrapper section-dark">
+    <div class="container">
+      <div class="section-header animate-on-scroll">
+        <div class="section-label">who_am_i</div>
+        <h2 class="section-title">About Me</h2>
+        <div class="section-rule"></div>
+      </div>
+      <div class="about-layout">
+        <div class="animate-on-scroll">
+          <div class="about-bio">
+            <p>{{ABOUT_DESCRIPTION}}</p>
+          </div>
+          <div class="about-table">
+            <div class="about-row">
+              <span class="about-row-key">name</span>
+              <span class="about-row-val">{{FULL_NAME}}</span>
+            </div>
+            <div class="about-row">
+              <span class="about-row-key">location</span>
+              <span class="about-row-val">{{LOCATION}}</span>
+            </div>
+            <div class="about-row">
+              <span class="about-row-key">degree</span>
+              <span class="about-row-val">{{EDUCATION_DEGREE}}</span>
+            </div>
+            <div class="about-row">
+              <span class="about-row-key">role</span>
+              <span class="about-row-val">{{CURRENT_POSITION}}</span>
+            </div>
+            <div class="about-row">
+              <span class="about-row-key">email</span>
+              <span class="about-row-val">{{EMAIL}}</span>
+            </div>
+            <div class="about-row">
+              <span class="about-row-key">status</span>
+              <span class="about-row-val" style="color:var(--neon);">&#x25CF; Available</span>
+            </div>
+          </div>
+        </div>
+        <div class="about-cards animate-on-scroll delay-2">
+          <div class="about-feat-card">
+            <div class="feat-icon"><i class="fas fa-code-branch"></i></div>
+            <div class="feat-title">Clean Code Advocate</div>
+            <div class="feat-desc">Writing maintainable, scalable code that teams love to work with. Every function has a purpose.</div>
+          </div>
+          <div class="about-feat-card">
+            <div class="feat-icon"><i class="fas fa-bolt"></i></div>
+            <div class="feat-title">Performance First</div>
+            <div class="feat-desc">Obsessed with speed and efficiency — from query optimization to render pipelines and everything in between.</div>
+          </div>
+          <div class="about-feat-card">
+            <div class="feat-icon"><i class="fas fa-shield-alt"></i></div>
+            <div class="feat-title">Security Minded</div>
+            <div class="feat-desc">Building with security best practices from day one. No afterthoughts, no duct tape — robust by design.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Skills Section -->
+  <section id="skills" class="section-wrapper">
+    <div class="container">
+      <div class="section-header animate-on-scroll">
+        <div class="section-label">tech_stack</div>
+        <h2 class="section-title">Skills & Technologies</h2>
+        <div class="section-rule"></div>
+        <p class="section-sub">The tools, languages, and frameworks I use to build great software.</p>
+      </div>
+      <div class="skills-layout">
+        <div class="skill-category animate-on-scroll">
+          <div class="category-header">
+            <div class="category-icon"><i class="fas fa-code"></i></div>
+            <div class="category-title">Languages</div>
+          </div>
+          <div class="skills-grid">{{PROGRAMMING_LANGUAGES}}</div>
+        </div>
+        <div class="skill-category animate-on-scroll delay-1">
+          <div class="category-header">
+            <div class="category-icon"><i class="fas fa-cubes"></i></div>
+            <div class="category-title">Frameworks & Libs</div>
+          </div>
+          <div class="skills-grid">{{FRAMEWORKS}}</div>
+        </div>
+        <div class="skill-category animate-on-scroll delay-2">
+          <div class="category-header">
+            <div class="category-icon"><i class="fas fa-database"></i></div>
+            <div class="category-title">Databases & Tools</div>
+          </div>
+          <div class="skills-grid">{{DATABASES_TOOLS}}</div>
+        </div>
+        <div class="skill-category animate-on-scroll delay-3">
+          <div class="category-header">
+            <div class="category-icon"><i class="fas fa-cloud"></i></div>
+            <div class="category-title">Cloud & DevOps</div>
+          </div>
+          <div class="skills-grid">{{CLOUD_DEVOPS}}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Experience Section -->
+  <section id="experience" class="section-wrapper section-dark">
+    <div class="container">
+      <div class="section-header animate-on-scroll">
+        <div class="section-label">career_log</div>
+        <h2 class="section-title">Experience & Education</h2>
+        <div class="section-rule"></div>
+      </div>
+      <div class="exp-tabs">
+        <button class="tab-btn active" data-tab="experience"><i class="fas fa-briefcase"></i> Work</button>
+        <button class="tab-btn" data-tab="education"><i class="fas fa-graduation-cap"></i> Education</button>
+      </div>
+      <div class="animate-on-scroll">
+        <div class="timeline-tab active" id="experience-tab">
+          <div class="timeline">{{WORK_EXPERIENCE}}</div>
+        </div>
+        <div class="timeline-tab" id="education-tab">
+          <div class="timeline">{{EDUCATION_HISTORY}}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Projects Section -->
+  <section id="projects" class="section-wrapper">
+    <div class="container">
+      <div class="section-header animate-on-scroll">
+        <div class="section-label">build_log</div>
+        <h2 class="section-title">Featured Projects</h2>
+        <div class="section-rule"></div>
+        <p class="section-sub">Selected work that shows what I can build.</p>
+      </div>
+      <div class="projects-grid">{{PROJECTS_LIST}}</div>
+      <div class="projects-cta animate-on-scroll">
+        <p>// more projects on github</p>
+        <a href="{{GITHUB_URL}}" class="btn btn-outline" target="_blank"><i class="fab fa-github"></i> View All Projects</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section id="contact" class="section-wrapper section-dark">
+    <div class="container">
+      <div class="section-header animate-on-scroll">
+        <div class="section-label">ping_me</div>
+        <h2 class="section-title">Get In Touch</h2>
+        <div class="section-rule"></div>
+      </div>
+      <div class="contact-grid">
+        <div class="animate-on-scroll">
+          <div class="contact-tagline">Let's build something <span>great</span> together.</div>
+          <p class="contact-body">{{CONTACT_MESSAGE}}</p>
+          <div class="contact-items">
+            <a href="mailto:{{EMAIL}}" class="contact-item-row">
+              <div class="ci-icon"><i class="fas fa-envelope"></i></div>
+              <div><div class="ci-label">email</div><div class="ci-val">{{EMAIL}}</div></div>
+            </a>
+            <a href="tel:{{PHONE}}" class="contact-item-row">
+              <div class="ci-icon"><i class="fas fa-phone"></i></div>
+              <div><div class="ci-label">phone</div><div class="ci-val">{{PHONE}}</div></div>
+            </a>
+            <div class="contact-item-row">
+              <div class="ci-icon"><i class="fas fa-map-marker-alt"></i></div>
+              <div><div class="ci-label">location</div><div class="ci-val">{{LOCATION}}</div></div>
+            </div>
+            <a href="{{LINKEDIN_URL}}" class="contact-item-row" target="_blank">
+              <div class="ci-icon"><i class="fab fa-linkedin"></i></div>
+              <div><div class="ci-label">linkedin</div><div class="ci-val">Connect with me</div></div>
+            </a>
+          </div>
+        </div>
+
+        <div class="animate-on-scroll delay-2">
+          <form class="contact-form" id="contact-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>name</label>
+                <input type="text" name="name" placeholder="your name" required />
+              </div>
+              <div class="form-group">
+                <label>email</label>
+                <input type="email" name="email" placeholder="your@email.com" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>subject</label>
+              <input type="text" name="subject" placeholder="project inquiry..." required />
+            </div>
+            <div class="form-group">
+              <label>message</label>
+              <textarea name="message" placeholder="// describe your project..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Send Message</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div>
+          <div class="footer-brand"><span class="neon">~/</span>{{FULL_NAME}}</div>
+          <div class="footer-copy">// &copy; 2024 all rights reserved</div>
+        </div>
+        <div class="footer-social">
+          <a href="{{LINKEDIN_URL}}" class="social-link" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+          <a href="{{GITHUB_URL}}" class="social-link" target="_blank"><i class="fab fa-github"></i></a>
+          <a href="{{TWITTER_URL}}" class="social-link" target="_blank"><i class="fab fa-twitter"></i></a>
+          <a href="mailto:{{EMAIL}}" class="social-link"><i class="fas fa-envelope"></i></a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="assets/js/main.js"></script>
+  <script>
+    // Loading Screen
+    window.addEventListener('load', () => {
+      const ls = document.getElementById('loading-screen');
+      setTimeout(() => {
+        ls.style.opacity = '0';
+        setTimeout(() => ls.style.display = 'none', 600);
+      }, 2000);
+    });
+
+    // Typewriter
+    const typewriterTexts = ['{{JOB_TITLE}}', '{{SECONDARY_TITLE_1}}', '{{SECONDARY_TITLE_2}}', '{{SECONDARY_TITLE_3}}'];
+    let ti = 0, ci = 0, del = false;
+    function type() {
+      const el = document.getElementById('typewriter');
+      if (!el) return;
+      const t = typewriterTexts[ti];
+      el.textContent = del ? t.substring(0, ci-1) : t.substring(0, ci+1);
+      del ? ci-- : ci++;
+      let speed = del ? 35 : 80;
+      if (!del && ci === t.length) { speed = 2500; del = true; }
+      else if (del && ci === 0) { del = false; ti = (ti+1) % typewriterTexts.length; speed = 350; }
+      setTimeout(type, speed);
+    }
+    type();
+
+    // Scroll animations
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('animate'); });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.animate-on-scroll').forEach(el => obs.observe(el));
+
+    // Navbar
+    window.addEventListener('scroll', () => {
+      document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 80);
+      let cur = '';
+      document.querySelectorAll('section').forEach(s => { if (scrollY >= s.offsetTop - 200) cur = s.id; });
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.section === cur));
+    });
+
+    // Mobile menu
+    document.getElementById('nav-toggle').addEventListener('click', () => {
+      document.getElementById('nav-menu').classList.toggle('active');
+    });
+
+    // Experience tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.timeline-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(tab + '-tab').classList.add('active');
+      });
+    });
+
+    // Contact form
+    document.getElementById('contact-form').addEventListener('submit', e => {
+      e.preventDefault();
+      alert('Message sent! I will get back to you soon.');
+      e.target.reset();
+    });
+  </script>
+</body>
+</html>

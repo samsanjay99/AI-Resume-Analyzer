@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from PIL import Image
 from jobs.job_search import render_job_search
-from datetime import datetime
+from datetime import datetime, timedelta
 from ui_components import (
     apply_modern_styles, hero_section, feature_card, about_section,
     page_header, render_analytics_section, render_activity_section,
@@ -3551,7 +3551,7 @@ class ResumeApp:
                             today = datetime.now()
                             dates = [
     (today -
-    datetime.timedelta(
+    timedelta(
         days=i)).strftime('%Y-%m-%d') for i in range(7)]
                             dates.reverse()
 

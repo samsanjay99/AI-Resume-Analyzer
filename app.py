@@ -2866,22 +2866,33 @@ class ResumeApp:
                                 AnalysisManager.save_analysis(user_id, new_resume_id, new_analysis_data)
                             
                             # Generate course recommendations based on missing skills
-                            if analysis['keyword_match']['missing_skills']:
+                            missing_skills = analysis['keyword_match'].get('missing_skills', [])
+                            
+                            # Debug: Show what skills were detected
+                            st.info(f"🔍 Detected {len(missing_skills)} missing skills: {', '.join(missing_skills[:5])}")
+                            
+                            if missing_skills:
                                 from config.course_recommendation_manager import CourseRecommendationManager
                                 
-                                course_result = CourseRecommendationManager.save_recommendations_for_user(
-                                    user_id=user_id,
-                                    resume_id=resume_id,
-                                    analysis_id=resume_id,  # Using resume_id as analysis_id for now
-                                    missing_skills=analysis['keyword_match']['missing_skills']
-                                )
-                                
-                                if course_result['success']:
-                                    st.success(f"✅ Resume data saved! Generated {course_result['count']} course recommendations")
-                                else:
-                                    st.success("✅ Resume data saved successfully!")
+                                try:
+                                    course_result = CourseRecommendationManager.save_recommendations_for_user(
+                                        user_id=user_id,
+                                        resume_id=resume_id,
+                                        analysis_id=resume_id,  # Using resume_id as analysis_id for now
+                                        missing_skills=missing_skills
+                                    )
+                                    
+                                    if course_result['success']:
+                                        st.success(f"✅ Resume data saved! Generated {course_result['count']} course recommendations")
+                                        st.info("📚 Check the Learning Dashboard to see your personalized courses!")
+                                    else:
+                                        st.warning(f"⚠️ Resume saved but course recommendations failed: {course_result.get('message', 'Unknown error')}")
+                                except Exception as course_error:
+                                    st.warning(f"⚠️ Resume saved but course recommendations failed: {str(course_error)}")
+                                    print(f"Course recommendation error: {course_error}")
                             else:
                                 st.success("✅ Resume data saved successfully!")
+                                st.info("ℹ️ No skill gaps detected - your resume looks great!")
                         except Exception as e:
                             st.error(f"Error saving to database: {str(e)}")
                             print(f"Database error: {e}")

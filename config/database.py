@@ -266,7 +266,7 @@ def init_database():
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS course_recommendations (
                 id SERIAL PRIMARY KEY,
-                user_id INTEGER REFERENCES users(id),
+                user_id INTEGER,
                 resume_id INTEGER,
                 analysis_id INTEGER,
                 course_title TEXT NOT NULL,

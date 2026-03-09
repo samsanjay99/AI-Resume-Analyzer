@@ -59,15 +59,42 @@ def get_connection_pool():
 
 @contextmanager
 def get_database_connection():
-    """Get a connection from the pool"""
+    """Get a connection from the pool with health check"""
     pool = get_connection_pool()
     conn = None
     try:
         conn = pool.getconn()
+        
+        # Test connection health
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1")
+            cursor.close()
+        except Exception as health_error:
+            # Connection is stale, close it and get a new one
+            print(f"⚠️ Stale connection detected, refreshing...")
+            try:
+                pool.putconn(conn, close=True)
+            except:
+                pass
+            conn = pool.getconn()
+        
         yield conn
+    except Exception as e:
+        print(f"❌ Database connection error: {e}")
+        # Try to get a fresh connection
+        if conn:
+            try:
+                pool.putconn(conn, close=True)
+            except:
+                pass
+        raise
     finally:
         if conn:
-            pool.putconn(conn)
+            try:
+                pool.putconn(conn)
+            except Exception as e:
+                print(f"⚠️ Error returning connection to pool: {e}")
 
 def get_cached(key):
     """Get cached value if not expired"""

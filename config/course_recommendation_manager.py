@@ -135,60 +135,75 @@ class CourseRecommendationManager:
     
     @staticmethod
     def get_user_recommendations(user_id: int, limit: int = 20) -> List[Dict]:
-        """Get all course recommendations for user"""
-        try:
-            with get_database_connection() as conn:
-                cursor = conn.cursor()
+        """Get all course recommendations for user with retry logic"""
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                with get_database_connection() as conn:
+                    cursor = conn.cursor()
+                    
+                    # Check if table exists first
+                    cursor.execute("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.tables 
+                            WHERE table_name = 'course_recommendations'
+                        )
+                    """)
+                    table_exists = cursor.fetchone()[0]
+                    
+                    if not table_exists:
+                        print("⚠️ course_recommendations table doesn't exist yet")
+                        return []
+                    
+                    cursor.execute("""
+                        SELECT 
+                            id, course_title, course_platform, skill_covered,
+                            youtube_video_id, thumbnail_url, channel_name,
+                            video_duration, course_url, course_type,
+                            is_watched, is_bookmarked, watch_progress,
+                            recommended_date
+                        FROM course_recommendations
+                        WHERE user_id = %s
+                        ORDER BY recommended_date DESC
+                        LIMIT %s
+                    """, (user_id, limit))
+                    
+                    recommendations = []
+                    for row in cursor.fetchall():
+                        recommendations.append({
+                            'id': row[0],
+                            'course_title': row[1],
+                            'course_platform': row[2],
+                            'skill_covered': row[3],
+                            'youtube_video_id': row[4],
+                            'thumbnail_url': row[5],
+                            'channel_name': row[6],
+                            'video_duration': row[7],
+                            'course_url': row[8],
+                            'course_type': row[9],
+                            'is_watched': row[10],
+                            'is_bookmarked': row[11],
+                            'watch_progress': row[12],
+                            'recommended_date': row[13]
+                        })
+                    
+                    return recommendations
+                    
+            except Exception as e:
+                retry_count += 1
+                print(f"⚠️ Error getting recommendations (attempt {retry_count}/{max_retries}): {e}")
                 
-                # Check if table exists first
-                cursor.execute("""
-                    SELECT EXISTS (
-                        SELECT FROM information_schema.tables 
-                        WHERE table_name = 'course_recommendations'
-                    )
-                """)
-                table_exists = cursor.fetchone()[0]
-                
-                if not table_exists:
-                    print("⚠️ course_recommendations table doesn't exist yet")
+                if retry_count >= max_retries:
+                    print(f"❌ Failed to get recommendations after {max_retries} attempts")
                     return []
                 
-                cursor.execute("""
-                    SELECT 
-                        id, course_title, course_platform, skill_covered,
-                        youtube_video_id, thumbnail_url, channel_name,
-                        video_duration, course_url, course_type,
-                        is_watched, is_bookmarked, watch_progress,
-                        recommended_date
-                    FROM course_recommendations
-                    WHERE user_id = %s
-                    ORDER BY recommended_date DESC
-                    LIMIT %s
-                """, (user_id, limit))
-                
-                recommendations = []
-                for row in cursor.fetchall():
-                    recommendations.append({
-                        'id': row[0],
-                        'course_title': row[1],
-                        'course_platform': row[2],
-                        'skill_covered': row[3],
-                        'youtube_video_id': row[4],
-                        'thumbnail_url': row[5],
-                        'channel_name': row[6],
-                        'video_duration': row[7],
-                        'course_url': row[8],
-                        'course_type': row[9],
-                        'is_watched': row[10],
-                        'is_bookmarked': row[11],
-                        'watch_progress': row[12],
-                        'recommended_date': row[13]
-                    })
-                
-                return recommendations
-        except Exception as e:
-            print(f"Error getting recommendations: {e}")
-            return []
+                # Wait a bit before retrying
+                import time
+                time.sleep(0.5 * retry_count)  # Exponential backoff
+        
+        return []
     
     @staticmethod
     def mark_as_watched(recommendation_id: int, user_id: int) -> bool:

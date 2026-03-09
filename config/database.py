@@ -98,88 +98,6 @@ def warm_cache():
     except Exception as e:
         print(f"⚠️ Cache warm-up warning: {e}")
 
-def seed_initial_courses():
-    """Seed database with popular YouTube courses for common skills"""
-    try:
-        with get_database_connection() as conn:
-            cursor = conn.cursor()
-            
-            # Check if already seeded
-            cursor.execute("SELECT COUNT(*) FROM skill_course_mapping")
-            count = cursor.fetchone()[0]
-            if count > 0:
-                return  # Already seeded
-            
-            # Popular courses for common skills
-            courses = [
-                ('Python', 'Python Full Course for Beginners', 'rfscVS0vtbw', 
-                 'https://img.youtube.com/vi/rfscVS0vtbw/maxresdefault.jpg',
-                 'Programming with Mosh', '6:14:07', 
-                 'https://youtube.com/watch?v=rfscVS0vtbw', 'Beginner'),
-                
-                ('SQL', 'SQL Full Course for Beginners', 'HXV3zeQKqGY',
-                 'https://img.youtube.com/vi/HXV3zeQKqGY/maxresdefault.jpg',
-                 'freeCodeCamp.org', '4:20:44',
-                 'https://youtube.com/watch?v=HXV3zeQKqGY', 'Beginner'),
-                
-                ('JavaScript', 'JavaScript Full Course for Beginners', 'PkZNo7MFNFg',
-                 'https://img.youtube.com/vi/PkZNo7MFNFg/maxresdefault.jpg',
-                 'freeCodeCamp.org', '3:26:42',
-                 'https://youtube.com/watch?v=PkZNo7MFNFg', 'Beginner'),
-                
-                ('React', 'React Course - Beginners Tutorial', 'bMknfKXIFA8',
-                 'https://img.youtube.com/vi/bMknfKXIFA8/maxresdefault.jpg',
-                 'freeCodeCamp.org', '11:55:27',
-                 'https://youtube.com/watch?v=bMknfKXIFA8', 'Beginner'),
-                
-                ('Java', 'Java Full Course for Beginners', 'xk4_1vDrzzo',
-                 'https://img.youtube.com/vi/xk4_1vDrzzo/maxresdefault.jpg',
-                 'Programming with Mosh', '2:30:28',
-                 'https://youtube.com/watch?v=xk4_1vDrzzo', 'Beginner'),
-                
-                ('Machine Learning', 'Machine Learning Course for Beginners', 'NWONeJKn6kc',
-                 'https://img.youtube.com/vi/NWONeJKn6kc/maxresdefault.jpg',
-                 'freeCodeCamp.org', '20:23:47',
-                 'https://youtube.com/watch?v=NWONeJKn6kc', 'Intermediate'),
-                
-                ('Data Science', 'Data Science Full Course for Beginners', 'ua-CiDNNj30',
-                 'https://img.youtube.com/vi/ua-CiDNNj30/maxresdefault.jpg',
-                 'freeCodeCamp.org', '12:18:40',
-                 'https://youtube.com/watch?v=ua-CiDNNj30', 'Beginner'),
-                
-                ('AWS', 'AWS Certified Cloud Practitioner Training', 'SOTamWNgDKc',
-                 'https://img.youtube.com/vi/SOTamWNgDKc/maxresdefault.jpg',
-                 'freeCodeCamp.org', '13:56:31',
-                 'https://youtube.com/watch?v=SOTamWNgDKc', 'Beginner'),
-                
-                ('Docker', 'Docker Tutorial for Beginners', 'fqMOX6JJhGo',
-                 'https://img.youtube.com/vi/fqMOX6JJhGo/maxresdefault.jpg',
-                 'Programming with Mosh', '1:08:08',
-                 'https://youtube.com/watch?v=fqMOX6JJhGo', 'Beginner'),
-                
-                ('Git', 'Git and GitHub for Beginners', 'RGOj5yH7evk',
-                 'https://img.youtube.com/vi/RGOj5yH7evk/maxresdefault.jpg',
-                 'freeCodeCamp.org', '1:08:41',
-                 'https://youtube.com/watch?v=RGOj5yH7evk', 'Beginner'),
-            ]
-            
-            for skill, title, video_id, thumbnail, channel, duration, url, level in courses:
-                try:
-                    cursor.execute("""
-                        INSERT INTO skill_course_mapping 
-                        (skill_name, course_title, youtube_video_id, thumbnail_url, 
-                         channel_name, video_duration, course_url, difficulty_level)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                        ON CONFLICT (skill_name, youtube_video_id) DO NOTHING
-                    """, (skill, title, video_id, thumbnail, channel, duration, url, level))
-                except Exception as e:
-                    print(f"⚠️ Error inserting {title}: {e}")
-            
-            conn.commit()
-            print(f"✅ Seeded {len(courses)} courses successfully")
-    except Exception as e:
-        print(f"⚠️ Error seeding courses: {e}")
-
 def init_database():
     """Initialize database tables (runs only once)"""
     global _database_initialized
@@ -194,153 +112,105 @@ def init_database():
     try:
         with get_database_connection() as conn:
             cursor = conn.cursor()
-        
-        # Create resume_data table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS resume_data (
-            id SERIAL PRIMARY KEY,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL,
-            phone TEXT NOT NULL,
-            linkedin TEXT,
-            github TEXT,
-            portfolio TEXT,
-            summary TEXT,
-            target_role TEXT,
-            target_category TEXT,
-            education TEXT,
-            experience TEXT,
-            projects TEXT,
-            skills TEXT,
-            template TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        ''')
-        
-        # Create resume_skills table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS resume_skills (
-            id SERIAL PRIMARY KEY,
-            resume_id INTEGER,
-            skill_name TEXT NOT NULL,
-            skill_category TEXT NOT NULL,
-            proficiency_score REAL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (resume_id) REFERENCES resume_data (id)
-        )
-        ''')
-        
-        # Create resume_analysis table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS resume_analysis (
-            id SERIAL PRIMARY KEY,
-            resume_id INTEGER,
-            ats_score REAL,
-            keyword_match_score REAL,
-            format_score REAL,
-            section_score REAL,
-            missing_skills TEXT,
-            recommendations TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (resume_id) REFERENCES resume_data (id)
-        )
-        ''')
-        
-        # Create admin_logs table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS admin_logs (
-            id SERIAL PRIMARY KEY,
-            admin_email TEXT NOT NULL,
-            action TEXT NOT NULL,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        ''')
-        
-        # Create admin table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS admin (
-            id SERIAL PRIMARY KEY,
-            email TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        ''')
-        
-        # Create course_recommendations table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS course_recommendations (
+            
+            # Create resume_data table
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS resume_data (
                 id SERIAL PRIMARY KEY,
-                user_id INTEGER,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                linkedin TEXT,
+                github TEXT,
+                portfolio TEXT,
+                summary TEXT,
+                target_role TEXT,
+                target_category TEXT,
+                education TEXT,
+                experience TEXT,
+                projects TEXT,
+                skills TEXT,
+                template TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            ''')
+            
+            # Create resume_skills table
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS resume_skills (
+                id SERIAL PRIMARY KEY,
                 resume_id INTEGER,
-                analysis_id INTEGER,
-                course_title TEXT NOT NULL,
-                course_platform TEXT DEFAULT 'YouTube',
-                skill_covered TEXT NOT NULL,
-                course_description TEXT,
-                youtube_video_id TEXT,
-                thumbnail_url TEXT,
-                channel_name TEXT,
-                video_duration TEXT,
-                course_url TEXT NOT NULL,
-                course_type TEXT DEFAULT 'video',
-                is_watched BOOLEAN DEFAULT FALSE,
-                is_bookmarked BOOLEAN DEFAULT FALSE,
-                watch_progress INTEGER DEFAULT 0,
-                recommended_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_accessed TIMESTAMP,
-                UNIQUE(user_id, youtube_video_id)
-            )
-        """)
-        
-        # Create skill_course_mapping table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS skill_course_mapping (
-                id SERIAL PRIMARY KEY,
                 skill_name TEXT NOT NULL,
-                course_title TEXT NOT NULL,
-                youtube_video_id TEXT NOT NULL,
-                thumbnail_url TEXT,
-                channel_name TEXT,
-                video_duration TEXT,
-                course_url TEXT NOT NULL,
-                difficulty_level TEXT DEFAULT 'Beginner',
-                rating REAL DEFAULT 0.0,
-                view_count INTEGER DEFAULT 0,
+                skill_category TEXT NOT NULL,
+                proficiency_score REAL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(skill_name, youtube_video_id)
+                FOREIGN KEY (resume_id) REFERENCES resume_data (id)
             )
-        """)
-        
-        conn.commit()
-        
-        # Create indexes for better performance
-        try:
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_resume_data_email ON resume_data(email)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_resume_data_created_at ON resume_data(created_at)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_resume_analysis_resume_id ON resume_analysis(resume_id)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_ai_analysis_resume_id ON ai_analysis(resume_id)')
+            ''')
+            
+            # Create resume_analysis table
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS resume_analysis (
+                id SERIAL PRIMARY KEY,
+                resume_id INTEGER,
+                ats_score REAL,
+                keyword_match_score REAL,
+                format_score REAL,
+                section_score REAL,
+                missing_skills TEXT,
+                recommendations TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (resume_id) REFERENCES resume_data (id)
+            )
+            ''')
+            
+            # Create admin_logs table
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS admin_logs (
+                id SERIAL PRIMARY KEY,
+                admin_email TEXT NOT NULL,
+                action TEXT NOT NULL,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            ''')
+            
+            # Create admin table
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS admin (
+                id SERIAL PRIMARY KEY,
+                email TEXT NOT NULL UNIQUE,
+                password TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            ''')
+            
             conn.commit()
-            print("✅ Database indexes created")
-        except Exception as e:
-            print(f"⚠️ Index creation warning: {e}")
-    
-    # Create default admin if none exists
-    create_default_admin()
-    
-    # Setup additional tables
-    setup_feedback_table()
-    setup_uploaded_files_table()
-    
-    # Seed initial course data
-    seed_initial_courses()
-    
-    # Mark as initialized
-    _database_initialized = True
-    print("✅ Database initialized successfully!")
-    
-    # Warm up the cache for better performance
-    warm_cache()
-    
+            
+            # Create indexes for better performance
+            try:
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_resume_data_email ON resume_data(email)')
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_resume_data_created_at ON resume_data(created_at)')
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_resume_analysis_resume_id ON resume_analysis(resume_id)')
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_ai_analysis_resume_id ON ai_analysis(resume_id)')
+                conn.commit()
+                print("✅ Database indexes created")
+            except Exception as e:
+                print(f"⚠️ Index creation warning: {e}")
+        
+        # Create default admin if none exists
+        create_default_admin()
+        
+        # Setup additional tables
+        setup_feedback_table()
+        setup_uploaded_files_table()
+        
+        # Mark as initialized
+        _database_initialized = True
+        print("✅ Database initialized successfully!")
+        
+        # Warm up the cache for better performance
+        warm_cache()
+        
     except Exception as e:
         print(f"❌ Error initializing database: {e}")
         import traceback

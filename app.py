@@ -4654,6 +4654,13 @@ class ResumeApp:
                                         # ============ LEARNING RECOMMENDATIONS SECTION ============
                                         st.markdown("<br>", unsafe_allow_html=True)
                                         
+                                        # DEBUG: Show what's in analysis_result
+                                        st.info(f"🔍 Debug: analysis_result keys: {list(analysis_result.keys())}")
+                                        if 'missing_skills' in analysis_result:
+                                            st.info(f"🔍 Debug: missing_skills found: {analysis_result['missing_skills']}")
+                                        else:
+                                            st.warning("⚠️ Debug: missing_skills not in analysis_result")
+                                        
                                         # Get missing skills from AI analysis result
                                         # The AI analyzer returns missing_skills directly in the result
                                         missing_skills = analysis_result.get('missing_skills', [])

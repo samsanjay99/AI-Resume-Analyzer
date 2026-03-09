@@ -4654,8 +4654,31 @@ class ResumeApp:
                                         # ============ LEARNING RECOMMENDATIONS SECTION ============
                                         st.markdown("<br>", unsafe_allow_html=True)
                                         
-                                        # Get missing skills from analysis
+                                        # Get missing skills from AI analysis result
+                                        # The AI analyzer returns missing_skills directly in the result
                                         missing_skills = analysis_result.get('missing_skills', [])
+                                        
+                                        # Store in session state for Learning Dashboard
+                                        if missing_skills:
+                                            st.session_state["missing_skills"] = missing_skills
+                                            
+                                            # Save course recommendations to database
+                                            try:
+                                                from config.course_recommendation_manager import CourseRecommendationManager
+                                                
+                                                course_result = CourseRecommendationManager.save_recommendations_for_user(
+                                                    user_id=user_id,
+                                                    resume_id=resume_id if 'resume_id' in locals() else 0,
+                                                    analysis_id=resume_id if 'resume_id' in locals() else 0,
+                                                    missing_skills=missing_skills
+                                                )
+                                                
+                                                if course_result['success']:
+                                                    print(f"✅ Saved {course_result['count']} course recommendations")
+                                                else:
+                                                    print(f"⚠️ Course recommendations not saved: {course_result.get('message')}")
+                                            except Exception as course_error:
+                                                print(f"⚠️ Error saving course recommendations: {course_error}")
                                         
                                         if missing_skills and len(missing_skills) > 0:
                                             # Beautiful card for learning recommendations

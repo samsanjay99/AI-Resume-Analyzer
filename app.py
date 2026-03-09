@@ -4650,6 +4650,93 @@ class ResumeApp:
                                             use_container_width=True,
                                             on_click=lambda: st.balloons()
                                         )
+                                        
+                                        # ============ LEARNING RECOMMENDATIONS SECTION ============
+                                        st.markdown("<br>", unsafe_allow_html=True)
+                                        
+                                        # Get missing skills from analysis
+                                        missing_skills = analysis_result.get('missing_skills', [])
+                                        
+                                        if missing_skills and len(missing_skills) > 0:
+                                            # Beautiful card for learning recommendations
+                                            st.markdown("""
+                                            <div style="
+                                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                                padding: 2rem;
+                                                border-radius: 16px;
+                                                box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+                                                margin: 2rem 0;
+                                                text-align: center;
+                                            ">
+                                                <h2 style="color: white; margin: 0 0 1rem 0; font-size: 1.8rem;">
+                                                    🎓 Boost Your Skills!
+                                                </h2>
+                                                <p style="color: rgba(255,255,255,0.9); font-size: 1.1rem; margin: 0 0 1.5rem 0;">
+                                                    We found <strong>{}</strong> skill gaps in your resume. 
+                                                    Get personalized YouTube courses to level up!
+                                                </p>
+                                            </div>
+                                            """.format(len(missing_skills)), unsafe_allow_html=True)
+                                            
+                                            # Show preview of missing skills
+                                            st.markdown("### 📋 Skills to Improve:")
+                                            skill_cols = st.columns(min(len(missing_skills), 5))
+                                            for idx, skill in enumerate(missing_skills[:5]):
+                                                with skill_cols[idx]:
+                                                    st.markdown(f"""
+                                                    <div style="
+                                                        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                                                        padding: 0.8rem;
+                                                        border-radius: 12px;
+                                                        text-align: center;
+                                                        color: white;
+                                                        font-weight: 600;
+                                                        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+                                                    ">
+                                                        {skill}
+                                                    </div>
+                                                    """, unsafe_allow_html=True)
+                                            
+                                            if len(missing_skills) > 5:
+                                                st.info(f"+ {len(missing_skills) - 5} more skills")
+                                            
+                                            st.markdown("<br>", unsafe_allow_html=True)
+                                            
+                                            # Big CTA button to Learning Dashboard
+                                            col1, col2, col3 = st.columns([1, 2, 1])
+                                            with col2:
+                                                if st.button(
+                                                    "🚀 View My Personalized Courses",
+                                                    key="view_courses_btn",
+                                                    type="primary",
+                                                    use_container_width=True
+                                                ):
+                                                    st.session_state.page = 'learning_dashboard'
+                                                    st.success("✅ Redirecting to your Learning Dashboard...")
+                                                    st.rerun()
+                                        else:
+                                            # No skill gaps - show congratulations
+                                            st.markdown("""
+                                            <div style="
+                                                background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                                                padding: 2rem;
+                                                border-radius: 16px;
+                                                box-shadow: 0 10px 30px rgba(17, 153, 142, 0.3);
+                                                margin: 2rem 0;
+                                                text-align: center;
+                                            ">
+                                                <h2 style="color: white; margin: 0 0 1rem 0; font-size: 1.8rem;">
+                                                    🎉 Excellent Resume!
+                                                </h2>
+                                                <p style="color: rgba(255,255,255,0.9); font-size: 1.1rem; margin: 0;">
+                                                    Your resume looks great! No major skill gaps detected.
+                                                    Keep learning to stay ahead!
+                                                </p>
+                                            </div>
+                                            """, unsafe_allow_html=True)
+                                        
+                                        # ============ END LEARNING RECOMMENDATIONS ============
+                                        
                                     else:
                                         st.error("PDF generation failed. Please try again later.")
                                 else:

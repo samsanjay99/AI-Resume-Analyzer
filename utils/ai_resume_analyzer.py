@@ -1548,6 +1548,9 @@ class AIResumeAnalyzer:
             # Extract ATS score
             ats_score = self._extract_ats_score_from_text(analysis_text)
             
+            # Extract missing skills
+            missing_skills = self.extract_missing_skills_from_analysis(analysis_text)
+            
             # Return structured analysis in the format expected by the UI
             return {
                 "analysis": analysis_text,  # Full analysis text for display
@@ -1556,6 +1559,7 @@ class AIResumeAnalyzer:
                 "strengths": strengths,  # List of strengths
                 "weaknesses": weaknesses,  # List of weaknesses
                 "suggestions": suggestions,  # List of suggestions
+                "missing_skills": missing_skills,  # List of missing skills for course recommendations
                 "model_used": model_used  # Which analysis mode was used
             }
             

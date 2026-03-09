@@ -186,10 +186,14 @@ def init_database():
     
     # Skip if already initialized
     if _database_initialized:
+        print("ℹ️ Database already initialized, skipping...")
         return
     
-    with get_database_connection() as conn:
-        cursor = conn.cursor()
+    print("🔄 Initializing database tables...")
+    
+    try:
+        with get_database_connection() as conn:
+            cursor = conn.cursor()
         
         # Create resume_data table
         cursor.execute('''
@@ -332,10 +336,18 @@ def init_database():
     
     # Mark as initialized
     _database_initialized = True
-    print("✅ Database initialized")
+    print("✅ Database initialized successfully!")
     
     # Warm up the cache for better performance
     warm_cache()
+    
+    except Exception as e:
+        print(f"❌ Error initializing database: {e}")
+        import traceback
+        traceback.print_exc()
+        # Don't mark as initialized if there was an error
+        _database_initialized = False
+        raise
 
 def save_resume_data(data, user_id=None):
     """Save resume data to database with user_id"""

@@ -4654,16 +4654,37 @@ class ResumeApp:
                                         # ============ LEARNING RECOMMENDATIONS SECTION ============
                                         st.markdown("<br>", unsafe_allow_html=True)
                                         
-                                        # DEBUG: Show what's in analysis_result
-                                        st.info(f"🔍 Debug: analysis_result keys: {list(analysis_result.keys())}")
-                                        if 'missing_skills' in analysis_result:
-                                            st.info(f"🔍 Debug: missing_skills found: {analysis_result['missing_skills']}")
-                                        else:
-                                            st.warning("⚠️ Debug: missing_skills not in analysis_result")
+                                        # Extract missing skills from the analysis text
+                                        missing_skills = []
+                                        analysis_text = analysis_result.get('analysis', '')
                                         
-                                        # Get missing skills from AI analysis result
-                                        # The AI analyzer returns missing_skills directly in the result
-                                        missing_skills = analysis_result.get('missing_skills', [])
+                                        # Extract missing skills from the "Missing Skills" section
+                                        if "Missing Skills" in analysis_text:
+                                            try:
+                                                missing_section = analysis_text.split("Missing Skills")[1]
+                                                # Stop at the next section
+                                                if "##" in missing_section:
+                                                    missing_section = missing_section.split("##")[0]
+                                                
+                                                # Extract skills from bullet points
+                                                for line in missing_section.split("\n"):
+                                                    line = line.strip()
+                                                    if line and ("-" in line or "*" in line or "•" in line):
+                                                        # Remove bullet points and clean up
+                                                        skill = line.replace("-", "").replace("*", "").replace("•", "").strip()
+                                                        # Take only the skill name (before colon if present)
+                                                        if ":" in skill:
+                                                            skill = skill.split(":")[0].strip()
+                                                        if skill and len(skill) > 2:  # Avoid empty or very short strings
+                                                            missing_skills.append(skill)
+                                            except Exception as e:
+                                                st.warning(f"⚠️ Error extracting skills: {e}")
+                                        
+                                        # Debug: Show extracted skills
+                                        if missing_skills:
+                                            st.success(f"✅ Extracted {len(missing_skills)} missing skills")
+                                        else:
+                                            st.info("ℹ️ No missing skills found in analysis")
                                         
                                         # Store in session state for Learning Dashboard
                                         if missing_skills:
@@ -4681,9 +4702,9 @@ class ResumeApp:
                                                 )
                                                 
                                                 if course_result['success']:
-                                                    print(f"✅ Saved {course_result['count']} course recommendations")
+                                                    st.success(f"✅ Saved {course_result['count']} course recommendations")
                                                 else:
-                                                    print(f"⚠️ Course recommendations not saved: {course_result.get('message')}")
+                                                    st.warning(f"⚠️ Course recommendations not saved: {course_result.get('message')}")
                                             except Exception as course_error:
                                                 print(f"⚠️ Error saving course recommendations: {course_error}")
                                         

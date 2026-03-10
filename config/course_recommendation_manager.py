@@ -32,16 +32,74 @@ class CourseRecommendationManager:
     
     @staticmethod
     def find_courses_for_skills(skills: List[str], limit: int = 3) -> List[Dict]:
-        """Find YouTube courses for given skills"""
+        """Find YouTube courses for given skills with intelligent matching"""
         if not skills:
             return []
+        
+        # Skill mapping: maps common skill phrases to database skill names
+        skill_mapping = {
+            'react': 'React',
+            'angular': 'Angular',
+            'vue': 'React',  # Map Vue to React as alternative
+            'frontend': 'React',
+            'ui': 'React',
+            'ux': 'React',
+            'javascript': 'JavaScript',
+            'js': 'JavaScript',
+            'typescript': 'TypeScript',
+            'ts': 'TypeScript',
+            'python': 'Python',
+            'java': 'Java',
+            'sql': 'SQL',
+            'database': 'SQL',
+            'git': 'Git',
+            'github': 'Git',
+            'version control': 'Git',
+            'docker': 'Docker',
+            'container': 'Docker',
+            'kubernetes': 'Kubernetes',
+            'k8s': 'Kubernetes',
+            'aws': 'AWS',
+            'cloud': 'AWS',
+            'node': 'Node.js',
+            'nodejs': 'Node.js',
+            'backend': 'Node.js',
+            'mongodb': 'MongoDB',
+            'nosql': 'MongoDB',
+            'machine learning': 'Machine Learning',
+            'ml': 'Machine Learning',
+            'ai': 'Machine Learning',
+            'data science': 'Data Science',
+            'data': 'Data Science',
+            'analytics': 'Data Science',
+        }
+        
+        # Map skills to database skills
+        mapped_skills = set()
+        for skill in skills:
+            skill_lower = skill.lower().strip()
+            
+            # Check direct mapping
+            if skill_lower in skill_mapping:
+                mapped_skills.add(skill_mapping[skill_lower])
+            else:
+                # Check if any mapping key is in the skill
+                for key, value in skill_mapping.items():
+                    if key in skill_lower:
+                        mapped_skills.add(value)
+                        break
+                else:
+                    # No mapping found, use original skill
+                    mapped_skills.add(skill)
         
         with get_database_connection() as conn:
             cursor = conn.cursor()
             
             courses = []
-            for skill in skills:
-                # Fuzzy match skill names
+            seen_videos = set()  # Avoid duplicates
+            
+            for skill in mapped_skills:
+                # Try exact match first
                 cursor.execute("""
                     SELECT 
                         skill_name,
@@ -53,22 +111,58 @@ class CourseRecommendationManager:
                         course_url,
                         difficulty_level
                     FROM skill_course_mapping
-                    WHERE LOWER(skill_name) LIKE LOWER(%s)
+                    WHERE LOWER(skill_name) = LOWER(%s)
                     ORDER BY rating DESC, view_count DESC
                     LIMIT %s
-                """, (f'%{skill}%', limit))
+                """, (skill, limit))
                 
                 for row in cursor.fetchall():
-                    courses.append({
-                        'skill_name': row[0],
-                        'course_title': row[1],
-                        'youtube_video_id': row[2],
-                        'thumbnail_url': row[3],
-                        'channel_name': row[4],
-                        'video_duration': row[5],
-                        'course_url': row[6],
-                        'difficulty_level': row[7]
-                    })
+                    video_id = row[2]
+                    if video_id not in seen_videos:
+                        seen_videos.add(video_id)
+                        courses.append({
+                            'skill_name': row[0],
+                            'course_title': row[1],
+                            'youtube_video_id': row[2],
+                            'thumbnail_url': row[3],
+                            'channel_name': row[4],
+                            'video_duration': row[5],
+                            'course_url': row[6],
+                            'difficulty_level': row[7]
+                        })
+                
+                # If no exact match, try fuzzy match
+                if not cursor.rowcount:
+                    cursor.execute("""
+                        SELECT 
+                            skill_name,
+                            course_title,
+                            youtube_video_id,
+                            thumbnail_url,
+                            channel_name,
+                            video_duration,
+                            course_url,
+                            difficulty_level
+                        FROM skill_course_mapping
+                        WHERE LOWER(skill_name) LIKE LOWER(%s)
+                        ORDER BY rating DESC, view_count DESC
+                        LIMIT %s
+                    """, (f'%{skill}%', limit))
+                    
+                    for row in cursor.fetchall():
+                        video_id = row[2]
+                        if video_id not in seen_videos:
+                            seen_videos.add(video_id)
+                            courses.append({
+                                'skill_name': row[0],
+                                'course_title': row[1],
+                                'youtube_video_id': row[2],
+                                'thumbnail_url': row[3],
+                                'channel_name': row[4],
+                                'video_duration': row[5],
+                                'course_url': row[6],
+                                'difficulty_level': row[7]
+                            })
             
             return courses
     

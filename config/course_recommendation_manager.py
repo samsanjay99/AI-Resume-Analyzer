@@ -34,7 +34,10 @@ class CourseRecommendationManager:
     def find_courses_for_skills(skills: List[str], limit: int = 3) -> List[Dict]:
         """Find YouTube courses for given skills with intelligent matching"""
         if not skills:
+            print("⚠️ find_courses_for_skills: No skills provided")
             return []
+        
+        print(f"🔍 find_courses_for_skills: Processing {len(skills)} skills")
         
         # Skill mapping: maps common skill phrases to database skill names
         skill_mapping = {
@@ -92,6 +95,8 @@ class CourseRecommendationManager:
                     # No mapping found, use original skill
                     mapped_skills.add(skill)
         
+        print(f"🔍 Mapped to {len(mapped_skills)} database skills: {mapped_skills}")
+        
         with get_database_connection() as conn:
             cursor = conn.cursor()
             
@@ -116,7 +121,10 @@ class CourseRecommendationManager:
                     LIMIT %s
                 """, (skill, limit))
                 
-                for row in cursor.fetchall():
+                rows = cursor.fetchall()
+                print(f"🔍 Exact match for '{skill}': {len(rows)} courses")
+                
+                for row in rows:
                     video_id = row[2]
                     if video_id not in seen_videos:
                         seen_videos.add(video_id)
@@ -132,7 +140,7 @@ class CourseRecommendationManager:
                         })
                 
                 # If no exact match, try fuzzy match
-                if not cursor.rowcount:
+                if len(rows) == 0:
                     cursor.execute("""
                         SELECT 
                             skill_name,
@@ -149,7 +157,10 @@ class CourseRecommendationManager:
                         LIMIT %s
                     """, (f'%{skill}%', limit))
                     
-                    for row in cursor.fetchall():
+                    fuzzy_rows = cursor.fetchall()
+                    print(f"🔍 Fuzzy match for '{skill}': {len(fuzzy_rows)} courses")
+                    
+                    for row in fuzzy_rows:
                         video_id = row[2]
                         if video_id not in seen_videos:
                             seen_videos.add(video_id)
@@ -164,6 +175,7 @@ class CourseRecommendationManager:
                                 'difficulty_level': row[7]
                             })
             
+            print(f"✅ Total courses found: {len(courses)}")
             return courses
     
     @staticmethod
@@ -171,11 +183,15 @@ class CourseRecommendationManager:
                                      analysis_id: int, missing_skills: List[str]) -> Dict:
         """Save personalized course recommendations for user"""
         try:
+            print(f"🔍 save_recommendations_for_user called: user_id={user_id}, resume_id={resume_id}, skills={len(missing_skills)}")
+            
             # Find courses for missing skills
             courses = CourseRecommendationManager.find_courses_for_skills(missing_skills)
             
+            print(f"🔍 Found {len(courses)} courses to save")
+            
             if not courses:
-                return {'success': False, 'message': 'No courses found for skills'}
+                return {'success': False, 'message': 'No courses found for skills', 'count': 0}
             
             with get_database_connection() as conn:
                 cursor = conn.cursor()
@@ -189,12 +205,15 @@ class CourseRecommendationManager:
                 """)
                 table_exists = cursor.fetchone()[0]
                 
+                print(f"🔍 Table exists: {table_exists}")
+                
                 if not table_exists:
-                    return {'success': False, 'message': 'course_recommendations table not initialized yet. Please restart the app.'}
+                    return {'success': False, 'message': 'course_recommendations table not initialized yet. Please restart the app.', 'count': 0}
                 
                 saved_count = 0
                 for course in courses:
                     try:
+                        print(f"🔍 Saving course: {course['course_title']}")
                         cursor.execute("""
                             INSERT INTO course_recommendations (
                                 user_id, resume_id, analysis_id,
@@ -212,10 +231,12 @@ class CourseRecommendationManager:
                             course['course_url'], 'video'
                         ))
                         saved_count += 1
+                        print(f"✅ Saved course {saved_count}")
                     except Exception as e:
-                        print(f"Error saving course {course['course_title']}: {e}")
+                        print(f"❌ Error saving course {course['course_title']}: {e}")
                 
                 conn.commit()
+                print(f"✅ Committed {saved_count} courses to database")
                 
                 return {
                     'success': True,
@@ -225,7 +246,10 @@ class CourseRecommendationManager:
                 }
         
         except Exception as e:
-            return {'success': False, 'message': str(e)}
+            print(f"❌ Error in save_recommendations_for_user: {e}")
+            import traceback
+            traceback.print_exc()
+            return {'success': False, 'message': str(e), 'count': 0}
     
     @staticmethod
     def get_user_recommendations(user_id: int, limit: int = 20) -> List[Dict]:

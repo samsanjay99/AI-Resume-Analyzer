@@ -4694,19 +4694,27 @@ class ResumeApp:
                                             try:
                                                 from config.course_recommendation_manager import CourseRecommendationManager
                                                 
+                                                # Debug: Check if resume_id exists
+                                                current_resume_id = resume_id if resume_id else 0
+                                                st.info(f"🔍 Debug: user_id={user_id}, resume_id={current_resume_id}, skills={len(missing_skills)}")
+                                                
                                                 course_result = CourseRecommendationManager.save_recommendations_for_user(
                                                     user_id=user_id,
-                                                    resume_id=resume_id if 'resume_id' in locals() else 0,
-                                                    analysis_id=resume_id if 'resume_id' in locals() else 0,
+                                                    resume_id=current_resume_id,
+                                                    analysis_id=current_resume_id,
                                                     missing_skills=missing_skills
                                                 )
+                                                
+                                                st.info(f"🔍 Debug: course_result={course_result}")
                                                 
                                                 if course_result['success']:
                                                     st.success(f"✅ Saved {course_result['count']} course recommendations")
                                                 else:
                                                     st.warning(f"⚠️ Course recommendations not saved: {course_result.get('message')}")
                                             except Exception as course_error:
-                                                print(f"⚠️ Error saving course recommendations: {course_error}")
+                                                st.error(f"⚠️ Error saving course recommendations: {course_error}")
+                                                import traceback
+                                                st.code(traceback.format_exc())
                                         
                                         if missing_skills and len(missing_skills) > 0:
                                             # Beautiful card for learning recommendations

@@ -261,12 +261,49 @@ class AIResumeAnalyzer:
             return {"error": "Google API key is not configured. Please add it to your .env file."}
         
         try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
+            # Configure safety settings to be more permissive for resume content
+            safety_settings = [
+                {
+                    "category": "HARM_CATEGORY_HARASSMENT",
+                    "threshold": "BLOCK_NONE"
+                },
+                {
+                    "category": "HARM_CATEGORY_HATE_SPEECH",
+                    "threshold": "BLOCK_NONE"
+                },
+                {
+                    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    "threshold": "BLOCK_NONE"
+                },
+                {
+                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                    "threshold": "BLOCK_NONE"
+                }
+            ]
+            
+            model = genai.GenerativeModel(
+                "gemini-2.5-flash",
+                safety_settings=safety_settings
+            )
             
             # Check if this is a portfolio generation request (contains JSON schema)
             if "JSON object" in prompt_text and "FULL_NAME" in prompt_text:
                 # This is a portfolio generation request
                 response = model.generate_content(prompt_text)
+                
+                # Check if response has valid content
+                if not response or not response.parts:
+                    error_msg = "Gemini API returned empty response for portfolio generation"
+                    if hasattr(response, 'prompt_feedback'):
+                        error_msg += f" - Prompt feedback: {response.prompt_feedback}"
+                    if hasattr(response, 'candidates') and response.candidates:
+                        candidate = response.candidates[0]
+                        if hasattr(candidate, 'finish_reason'):
+                            error_msg += f" - Finish reason: {candidate.finish_reason}"
+                        if hasattr(candidate, 'safety_ratings'):
+                            error_msg += f" - Safety ratings: {candidate.safety_ratings}"
+                    return {"error": error_msg}
+                
                 return {
                     "analysis": response.text.strip()
                 }
@@ -339,6 +376,20 @@ class AIResumeAnalyzer:
                 """
             
             response = model.generate_content(base_prompt)
+            
+            # Check if response has valid content
+            if not response or not response.parts:
+                error_msg = "Gemini API returned empty response"
+                if hasattr(response, 'prompt_feedback'):
+                    error_msg += f" - Prompt feedback: {response.prompt_feedback}"
+                if hasattr(response, 'candidates') and response.candidates:
+                    candidate = response.candidates[0]
+                    if hasattr(candidate, 'finish_reason'):
+                        error_msg += f" - Finish reason: {candidate.finish_reason}"
+                    if hasattr(candidate, 'safety_ratings'):
+                        error_msg += f" - Safety ratings: {candidate.safety_ratings}"
+                return {"error": error_msg}
+            
             analysis = response.text.strip()
             
             # Extract resume score if present

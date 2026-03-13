@@ -34,27 +34,43 @@ class CourseRecommendationManager:
     def find_courses_for_skills(skills: List[str], limit: int = 3) -> List[Dict]:
         """Find YouTube courses for given skills with intelligent matching"""
         if not skills:
-            print("⚠️ find_courses_for_skills: No skills provided")
             return []
         
-        print(f"🔍 find_courses_for_skills: Processing {len(skills)} skills")
-        
-        # Skill mapping: maps common skill phrases to database skill names
+        # Enhanced skill mapping: maps common skill phrases to database skill names
         skill_mapping = {
+            # Frontend
             'react': 'React',
             'angular': 'Angular',
-            'vue': 'React',  # Map Vue to React as alternative
+            'vue': 'React',
             'frontend': 'React',
-            'ui': 'React',
-            'ux': 'React',
+            'ui': 'HTML',
+            'ux': 'Web Development',
+            'responsive': 'Responsive Design',
+            'responsive design': 'Responsive Design',
+            'css': 'CSS',
+            'html': 'HTML',
+            'web development': 'Web Development',
+            
+            # JavaScript/TypeScript
             'javascript': 'JavaScript',
             'js': 'JavaScript',
             'typescript': 'TypeScript',
             'ts': 'TypeScript',
+            
+            # Backend
             'python': 'Python',
             'java': 'Java',
+            'node': 'Node.js',
+            'nodejs': 'Node.js',
+            'backend': 'Node.js',
+            
+            # Database
             'sql': 'SQL',
             'database': 'SQL',
+            'mongodb': 'MongoDB',
+            'nosql': 'MongoDB',
+            
+            # DevOps/Cloud
             'git': 'Git',
             'github': 'Git',
             'version control': 'Git',
@@ -64,17 +80,45 @@ class CourseRecommendationManager:
             'k8s': 'Kubernetes',
             'aws': 'AWS',
             'cloud': 'AWS',
-            'node': 'Node.js',
-            'nodejs': 'Node.js',
-            'backend': 'Node.js',
-            'mongodb': 'MongoDB',
-            'nosql': 'MongoDB',
+            'deployment': 'Deployment',
+            'deploy': 'Deployment',
+            
+            # Testing/Debugging
+            'testing': 'Testing',
+            'test': 'Testing',
+            'jest': 'Testing Frameworks',
+            'testing frameworks': 'Testing Frameworks',
+            'unit test': 'Testing',
+            'integration test': 'Testing',
+            'debugging': 'Debugging',
+            'debug': 'Debugging',
+            
+            # State Management
+            'redux': 'State Management',
+            'state management': 'State Management',
+            'state': 'State Management',
+            
+            # API
+            'api': 'API',
+            'rest': 'RESTful API',
+            'restful': 'RESTful API',
+            'rest api': 'RESTful API',
+            'api integration': 'API',
+            
+            # Data Science/ML
             'machine learning': 'Machine Learning',
             'ml': 'Machine Learning',
             'ai': 'Machine Learning',
             'data science': 'Data Science',
             'data': 'Data Science',
             'analytics': 'Data Science',
+            'data structures': 'Data Structures',
+            
+            # Problem Solving
+            'problem solving': 'Problem Solving',
+            'problemsolving': 'Problem Solving',
+            'problem-solving': 'Problem Solving',
+            'algorithms': 'Data Structures',
         }
         
         # Map skills to database skills
@@ -87,15 +131,16 @@ class CourseRecommendationManager:
                 mapped_skills.add(skill_mapping[skill_lower])
             else:
                 # Check if any mapping key is in the skill
+                matched = False
                 for key, value in skill_mapping.items():
                     if key in skill_lower:
                         mapped_skills.add(value)
+                        matched = True
                         break
-                else:
+                
+                if not matched:
                     # No mapping found, use original skill
                     mapped_skills.add(skill)
-        
-        print(f"🔍 Mapped to {len(mapped_skills)} database skills: {mapped_skills}")
         
         with get_database_connection() as conn:
             cursor = conn.cursor()
@@ -122,7 +167,6 @@ class CourseRecommendationManager:
                 """, (skill, limit))
                 
                 rows = cursor.fetchall()
-                print(f"🔍 Exact match for '{skill}': {len(rows)} courses")
                 
                 for row in rows:
                     video_id = row[2]
@@ -158,7 +202,6 @@ class CourseRecommendationManager:
                     """, (f'%{skill}%', limit))
                     
                     fuzzy_rows = cursor.fetchall()
-                    print(f"🔍 Fuzzy match for '{skill}': {len(fuzzy_rows)} courses")
                     
                     for row in fuzzy_rows:
                         video_id = row[2]
@@ -175,7 +218,6 @@ class CourseRecommendationManager:
                                 'difficulty_level': row[7]
                             })
             
-            print(f"✅ Total courses found: {len(courses)}")
             return courses
     
     @staticmethod
@@ -183,20 +225,15 @@ class CourseRecommendationManager:
                                      analysis_id: int, missing_skills: List[str]) -> Dict:
         """Save personalized course recommendations for user"""
         try:
-            print(f"🔍 save_recommendations_for_user called: user_id={user_id}, resume_id={resume_id}, skills={len(missing_skills)}")
-            
             # Find courses for missing skills
             courses = CourseRecommendationManager.find_courses_for_skills(missing_skills)
-            
-            print(f"🔍 Found {len(courses)} courses to save")
             
             if not courses:
                 return {'success': False, 'message': 'No courses found for skills', 'count': 0}
             
+            # Check if table exists first
             with get_database_connection() as conn:
                 cursor = conn.cursor()
-                
-                # Check if table exists first
                 cursor.execute("""
                     SELECT EXISTS (
                         SELECT FROM information_schema.tables 
@@ -204,16 +241,19 @@ class CourseRecommendationManager:
                     )
                 """)
                 table_exists = cursor.fetchone()[0]
-                
-                print(f"🔍 Table exists: {table_exists}")
-                
-                if not table_exists:
-                    return {'success': False, 'message': 'course_recommendations table not initialized yet. Please restart the app.', 'count': 0}
-                
-                saved_count = 0
-                for course in courses:
-                    try:
-                        print(f"🔍 Saving course: {course['course_title']}")
+            
+            if not table_exists:
+                return {'success': False, 'message': 'course_recommendations table not initialized yet. Please restart the app.', 'count': 0}
+            
+            saved_count = 0
+            errors = []
+            
+            # Process each course in its own transaction to avoid abort issues
+            for course in courses:
+                try:
+                    with get_database_connection() as conn:
+                        cursor = conn.cursor()
+                        
                         cursor.execute("""
                             INSERT INTO course_recommendations (
                                 user_id, resume_id, analysis_id,
@@ -230,23 +270,21 @@ class CourseRecommendationManager:
                             course['channel_name'], course['video_duration'],
                             course['course_url'], 'video'
                         ))
+                        conn.commit()
                         saved_count += 1
-                        print(f"✅ Saved course {saved_count}")
-                    except Exception as e:
-                        print(f"❌ Error saving course {course['course_title']}: {e}")
-                
-                conn.commit()
-                print(f"✅ Committed {saved_count} courses to database")
-                
-                return {
-                    'success': True,
-                    'message': f'Saved {saved_count} course recommendations',
-                    'count': saved_count,
-                    'courses': courses
-                }
+                except Exception as e:
+                    error_msg = f"{course['course_title']}: {str(e)}"
+                    errors.append(error_msg)
+            
+            return {
+                'success': True if saved_count > 0 else False,
+                'message': f'Saved {saved_count} course recommendations' + (f' ({len(errors)} failed)' if errors else ''),
+                'count': saved_count,
+                'courses': courses,
+                'errors': errors if errors else None
+            }
         
         except Exception as e:
-            print(f"❌ Error in save_recommendations_for_user: {e}")
             import traceback
             traceback.print_exc()
             return {'success': False, 'message': str(e), 'count': 0}

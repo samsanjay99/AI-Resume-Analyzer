@@ -4694,22 +4694,18 @@ class ResumeApp:
                                             try:
                                                 from config.course_recommendation_manager import CourseRecommendationManager
                                                 
-                                                # Debug: Check if resume_id exists
+                                                # Save recommendations
                                                 current_resume_id = resume_id if resume_id else 0
-                                                st.info(f"🔍 Debug: user_id={user_id}, resume_id={current_resume_id}, skills={len(missing_skills)}")
                                                 
                                                 course_result = CourseRecommendationManager.save_recommendations_for_user(
                                                     user_id=user_id,
                                                     resume_id=current_resume_id,
-                                                    analysis_id=current_resume_id,
+                                                    analysis_id=None,  # Set to None to avoid foreign key constraint issues
                                                     missing_skills=missing_skills
                                                 )
                                                 
-                                                st.info(f"🔍 Debug: course_result={course_result}")
-                                                
-                                                if course_result['success']:
-                                                    st.success(f"✅ Saved {course_result['count']} course recommendations")
-                                                else:
+                                                # Only show message if there's an issue
+                                                if not course_result['success']:
                                                     st.warning(f"⚠️ Course recommendations not saved: {course_result.get('message')}")
                                             except Exception as course_error:
                                                 st.error(f"⚠️ Error saving course recommendations: {course_error}")
@@ -4771,7 +4767,6 @@ class ResumeApp:
                                                     use_container_width=True
                                                 ):
                                                     st.session_state.page = 'learning_dashboard'
-                                                    st.success("✅ Redirecting to your Learning Dashboard...")
                                                     st.rerun()
                                         else:
                                             # No skill gaps - show congratulations

@@ -310,8 +310,7 @@ def render_user_history():
                         st.link_button(
                             "🌐 Visit Live Site", 
                             deployment['deployment_url'], 
-                            use_container_width=True,
-                            key=f"visit_{deployment['id']}"
+                            use_container_width=True
                         )
                 
                 with col2:
@@ -319,8 +318,7 @@ def render_user_history():
                         st.link_button(
                             "⚙️ Manage Site", 
                             deployment['admin_url'], 
-                            use_container_width=True,
-                            key=f"manage_{deployment['id']}"
+                            use_container_width=True
                         )
                 
                 with col3:

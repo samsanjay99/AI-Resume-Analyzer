@@ -2096,7 +2096,8 @@ class ResumeApp:
                 # ══════════════════════════════════════════════════════════════
 
                 zip_path_top = result.get('zip_path', '')
-                _portfolio_data_top = result.get('portfolio_data', {})
+                # Store portfolio data in session state for deployment
+                st.session_state.portfolio_data_for_deploy = result.get('portfolio_data', {})
 
                 # Step 1 – run the actual deploy when the flag is set
                 if st.session_state.get('do_deploy', False):
@@ -2133,7 +2134,8 @@ class ResumeApp:
                                         print("WARNING: User not authenticated - deployment not saved to history")
                                     else:
                                         user_id = AuthManager.get_current_user_id()
-                                        portfolio_name = _portfolio_data_top.get('FULL_NAME', 'Portfolio')
+                                        portfolio_data = st.session_state.get('portfolio_data_for_deploy', {})
+                                        portfolio_name = portfolio_data.get('FULL_NAME', 'Portfolio')
                                         
                                         print(f"DEBUG: Saving deployment - user_id={user_id}, portfolio_name={portfolio_name}")
                                         
@@ -2168,6 +2170,7 @@ class ResumeApp:
 
                 # Step 2 – HOST button (sets flag + reruns; deploy runs above on next render)
                 col_dl, col_host = st.columns(2)
+                portfolio_data = st.session_state.get('portfolio_data_for_deploy', {})
                 with col_dl:
                     if zip_path_top and os.path.exists(zip_path_top):
                         with open(zip_path_top, 'rb') as _f:
@@ -2175,7 +2178,7 @@ class ResumeApp:
                         st.download_button(
                             label="📥 Download Portfolio (.zip)",
                             data=_zd,
-                            file_name=f"{_portfolio_data_top.get('FULL_NAME', 'Portfolio').replace(' ', '_')}_portfolio.zip",
+                            file_name=f"{portfolio_data.get('FULL_NAME', 'Portfolio').replace(' ', '_')}_portfolio.zip",
                             mime="application/zip",
                             type="primary",
                             use_container_width=True

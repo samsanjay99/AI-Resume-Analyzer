@@ -2096,6 +2096,7 @@ class ResumeApp:
                 # ══════════════════════════════════════════════════════════════
 
                 zip_path_top = result.get('zip_path', '')
+                _portfolio_data_top = result.get('portfolio_data', {})
 
                 # Step 1 – run the actual deploy when the flag is set
                 if st.session_state.get('do_deploy', False):
@@ -2167,7 +2168,6 @@ class ResumeApp:
 
                 # Step 2 – HOST button (sets flag + reruns; deploy runs above on next render)
                 col_dl, col_host = st.columns(2)
-                _portfolio_data_top = result.get('portfolio_data', {})
                 with col_dl:
                     if zip_path_top and os.path.exists(zip_path_top):
                         with open(zip_path_top, 'rb') as _f:

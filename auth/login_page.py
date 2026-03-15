@@ -1,4 +1,4 @@
-"""
+﻿"""
 Login Page - Glass card over background image
 """
 import streamlit as st
@@ -23,13 +23,22 @@ def _inject_base_css(bg_b64):
 
     st.markdown(f"""
     <style>
-    /* Hide body until CSS loads - prevents flash of unstyled content */
-    body {{ visibility: hidden; }}
-    body.css-loaded {{ visibility: visible !important; }}
-
     #MainMenu, footer, header, .stDeployButton {{visibility: hidden;}}
     [data-testid="stSidebar"] {{display: none !important;}}
     [data-testid="stHeader"] {{background: transparent !important;}}
+
+    /* Flash prevention overlay - covers unstyled flash, fades out after 0.4s */
+    [data-testid="stAppViewContainer"]::after {{
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: #0f172a;
+        z-index: 99999;
+        animation: fadeOutOverlay 0.01s 0.4s forwards;
+    }}
+    @keyframes fadeOutOverlay {{
+        to {{ opacity: 0; pointer-events: none; visibility: hidden; }}
+    }}
 
     [data-testid="stAppViewContainer"] {{
         background: {bg_css} !important;
@@ -44,7 +53,6 @@ def _inject_base_css(bg_b64):
         z-index: 0;
     }}
 
-    /* Position card at left-center */
     .block-container {{
         padding: 2rem 1rem !important;
         max-width: 100% !important;
@@ -55,7 +63,6 @@ def _inject_base_css(bg_b64):
         padding-left: 12vw !important;
     }}
 
-    /* Glass card - target the actual <form> element */
     div[data-testid="stForm"] form {{
         background: rgba(255,255,255,0.28) !important;
         backdrop-filter: blur(40px) !important;
@@ -70,7 +77,6 @@ def _inject_base_css(bg_b64):
         width: 100% !important;
     }}
 
-    /* Input styling */
     .stTextInput > div > div > input {{
         border-radius: 10px !important;
         border: 1.5px solid rgba(255,255,255,0.4) !important;
@@ -81,10 +87,7 @@ def _inject_base_css(bg_b64):
         color: #ffffff !important;
         min-height: 48px !important;
     }}
-    .stTextInput > div > div > input::placeholder {{
-        color: rgba(255,255,255,0.6) !important;
-        font-weight: 400 !important;
-    }}
+    .stTextInput > div > div > input::placeholder {{color: rgba(255,255,255,0.6) !important;}}
     .stTextInput > div > div > input:focus {{
         border-color: rgba(255,255,255,0.75) !important;
         box-shadow: 0 0 0 3px rgba(255,255,255,0.15) !important;
@@ -95,10 +98,8 @@ def _inject_base_css(bg_b64):
         color: #ffffff !important;
         font-weight: 700 !important;
         font-size: 0.95rem !important;
-        letter-spacing: 0.01em !important;
     }}
 
-    /* Submit button */
     .stFormSubmitButton > button {{
         width: 100% !important;
         border-radius: 11px !important;
@@ -111,14 +112,12 @@ def _inject_base_css(bg_b64):
         color: white !important;
         box-shadow: 0 4px 16px rgba(99,102,241,0.45) !important;
         cursor: pointer !important;
-        letter-spacing: 0.02em !important;
     }}
     .stFormSubmitButton > button:hover {{
         transform: translateY(-2px) !important;
         box-shadow: 0 6px 22px rgba(99,102,241,0.6) !important;
     }}
 
-    /* Secondary button */
     .stButton > button {{
         width: 100% !important;
         max-width: 440px !important;
@@ -131,7 +130,6 @@ def _inject_base_css(bg_b64):
         border: 1.5px solid rgba(255,255,255,0.3) !important;
         color: #ffffff !important;
         box-shadow: none !important;
-        letter-spacing: 0.02em !important;
     }}
     .stButton > button:hover {{
         background: rgba(255,255,255,0.18) !important;
@@ -146,16 +144,9 @@ def _inject_base_css(bg_b64):
             padding-right: 1rem !important;
             justify-content: center !important;
         }}
-        div[data-testid="stForm"] {{
-            max-width: 100% !important;
-        }}
+        div[data-testid="stForm"] {{max-width: 100% !important;}}
     }}
     </style>
-    <script>
-        (function() {{
-            document.body.classList.add('css-loaded');
-        }})();
-    </script>
     """, unsafe_allow_html=True)
 
 
@@ -166,22 +157,22 @@ def render_login_page():
     with st.form("login_form"):
         st.markdown("""
         <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1.2rem;">
-            <span style="font-size:1.6rem;">🧠</span>
-            <span style="font-size:1.1rem;font-weight:800;color:#fff;letter-spacing:.01em;">AI Resume Analyzer</span>
+            <span style="font-size:1.6rem;">&#129504;</span>
+            <span style="font-size:1.1rem;font-weight:800;color:#fff;">AI Resume Analyzer</span>
         </div>
-        <div style="font-size:1.9rem;font-weight:800;color:#fff;margin-bottom:.4rem;letter-spacing:-.01em;">Welcome Back</div>
+        <div style="font-size:1.9rem;font-weight:800;color:#fff;margin-bottom:.4rem;">Welcome Back</div>
         <div style="font-size:1rem;color:rgba(255,255,255,.85);margin-bottom:1.6rem;line-height:1.5;font-weight:500;">
             Login to analyze your resume and unlock AI career insights.
         </div>
         """, unsafe_allow_html=True)
 
         email = st.text_input("Email", placeholder="you@example.com")
-        password = st.text_input("Password", type="password", placeholder="••••••••")
+        password = st.text_input("Password", type="password", placeholder="........")
         st.markdown("<div style='height:.4rem'></div>", unsafe_allow_html=True)
 
         col1, col2 = st.columns(2)
         with col1:
-            submitted = st.form_submit_button("Login →", use_container_width=True)
+            submitted = st.form_submit_button("Login", use_container_width=True)
         with col2:
             signup_clicked = st.form_submit_button("Create Account", use_container_width=True)
 
@@ -216,10 +207,10 @@ def render_signup_page():
     with st.form("signup_form"):
         st.markdown("""
         <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1.2rem;">
-            <span style="font-size:1.6rem;">🧠</span>
-            <span style="font-size:1.1rem;font-weight:800;color:#fff;letter-spacing:.01em;">AI Resume Analyzer</span>
+            <span style="font-size:1.6rem;">&#129504;</span>
+            <span style="font-size:1.1rem;font-weight:800;color:#fff;">AI Resume Analyzer</span>
         </div>
-        <div style="font-size:1.9rem;font-weight:800;color:#fff;margin-bottom:.4rem;letter-spacing:-.01em;">Create Account</div>
+        <div style="font-size:1.9rem;font-weight:800;color:#fff;margin-bottom:.4rem;">Create Account</div>
         <div style="font-size:1rem;color:rgba(255,255,255,.85);margin-bottom:1.6rem;line-height:1.5;font-weight:500;">
             Start improving your resume with AI-powered insights.
         </div>
@@ -232,9 +223,9 @@ def render_signup_page():
 
         col1, col2 = st.columns(2)
         with col1:
-            submitted = st.form_submit_button("Create Account →", use_container_width=True)
+            submitted = st.form_submit_button("Create Account", use_container_width=True)
         with col2:
-            back_clicked = st.form_submit_button("← Back to Login", use_container_width=True)
+            back_clicked = st.form_submit_button("Back to Login", use_container_width=True)
 
         st.markdown("""
         <div style="text-align:center;font-size:.82rem;color:rgba(255,255,255,.65);margin-top:1.2rem;font-weight:500;">

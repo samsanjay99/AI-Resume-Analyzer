@@ -23,6 +23,10 @@ def _inject_base_css(bg_b64):
 
     st.markdown(f"""
     <style>
+    /* Hide body until CSS loads - prevents flash of unstyled content */
+    body {{ visibility: hidden; }}
+    body.css-loaded {{ visibility: visible !important; }}
+
     #MainMenu, footer, header, .stDeployButton {{visibility: hidden;}}
     [data-testid="stSidebar"] {{display: none !important;}}
     [data-testid="stHeader"] {{background: transparent !important;}}
@@ -40,7 +44,7 @@ def _inject_base_css(bg_b64):
         z-index: 0;
     }}
 
-    /* Position card at left-center (roughly 1/4 from left) */
+    /* Position card at left-center */
     .block-container {{
         padding: 2rem 1rem !important;
         max-width: 100% !important;
@@ -53,10 +57,10 @@ def _inject_base_css(bg_b64):
 
     /* Glass card - target the actual <form> element */
     div[data-testid="stForm"] form {{
-        background: rgba(255,255,255,0.18) !important;
-        backdrop-filter: blur(24px) !important;
-        -webkit-backdrop-filter: blur(24px) !important;
-        border: 1px solid rgba(255,255,255,0.3) !important;
+        background: rgba(255,255,255,0.28) !important;
+        backdrop-filter: blur(40px) !important;
+        -webkit-backdrop-filter: blur(40px) !important;
+        border: 1px solid rgba(255,255,255,0.45) !important;
         border-radius: 24px !important;
         padding: 2.5rem 2rem !important;
         box-shadow: 0 8px 40px rgba(0,0,0,0.45) !important;
@@ -147,6 +151,11 @@ def _inject_base_css(bg_b64):
         }}
     }}
     </style>
+    <script>
+        (function() {{
+            document.body.classList.add('css-loaded');
+        }})();
+    </script>
     """, unsafe_allow_html=True)
 
 

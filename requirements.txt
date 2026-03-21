@@ -48,3 +48,6 @@ streamlit-extras>=0.3.0
 
 
 
+
+# Mock Interview
+# Note: VAPI runs via browser JS (CDN), no Python package needed

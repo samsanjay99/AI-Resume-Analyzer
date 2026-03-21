@@ -52,6 +52,7 @@ def render_user_history():
         "📝 Resumes", 
         "🔍 Analyses", 
         "🤖 AI Analyses", 
+        "🎤 Mock Interviews",
         "🌐 Deployments",
         "📁 Uploaded Files",
         "⏱️ Activity Timeline"
@@ -280,8 +281,17 @@ def render_user_history():
         else:
             st.info("No AI analyses yet. Try the Smart or Deep Analysis modes!")
     
-    # Tab 4: Deployments
+    # Tab 4: Mock Interviews
     with tabs[3]:
+        st.subheader("🎤 Mock Interview History")
+        try:
+            from pages.mock_interview import render_interview_history
+            render_interview_history()
+        except Exception as e:
+            st.error(f"Could not load interview history: {e}")
+
+    # Tab 5: Deployments
+    with tabs[4]:
         st.subheader("🌐 Portfolio Deployments")
         deployments_result = UserDataManager.get_user_deployments(user_id)
         
@@ -348,8 +358,8 @@ def render_user_history():
         else:
             st.info("No deployments yet. Visit the Portfolio Generator to create and deploy your portfolio!")
     
-    # Tab 5: Uploaded Files
-    with tabs[4]:
+    # Tab 6: Uploaded Files
+    with tabs[5]:
         st.subheader("📁 Uploaded Files")
         files_result = UserDataManager.get_user_uploaded_files(user_id)
         
@@ -372,8 +382,8 @@ def render_user_history():
         else:
             st.info("No files uploaded yet.")
     
-    # Tab 6: Activity Timeline
-    with tabs[5]:
+    # Tab 7: Activity Timeline
+    with tabs[6]:
         st.subheader("⏱️ Recent Activity")
         timeline_result = UserDataManager.get_user_activity_timeline(user_id, limit=50)
         

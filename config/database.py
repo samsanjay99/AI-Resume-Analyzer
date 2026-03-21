@@ -42,8 +42,8 @@ def get_connection_pool():
             )
             
             _connection_pool = psycopg2.pool.ThreadedConnectionPool(
-                minconn=2,  # Keep 2 connections ready
-                maxconn=20,  # Allow up to 20 connections
+                minconn=1,  # Reduced from 2 for faster startup
+                maxconn=10,  # Reduced from 20 for better resource usage
                 dsn=optimized_dsn
             )
             print("✅ Optimized database connection pool created")
@@ -114,16 +114,10 @@ def clear_cache():
     _cache = {}
 
 def warm_cache():
-    """Pre-load frequently accessed data into cache"""
-    try:
-        print("🔥 Warming up cache...")
-        # Pre-load database status
-        get_database_status()
-        # Pre-load resume stats
-        get_resume_stats()
-        print("✅ Cache warmed up")
-    except Exception as e:
-        print(f"⚠️ Cache warm-up warning: {e}")
+    """Pre-load frequently accessed data into cache - DISABLED for faster loading"""
+    # Disabled to improve page load speed
+    # Cache will be populated on-demand instead
+    pass
 
 def init_database():
     """Initialize database tables (runs only once)"""
@@ -230,6 +224,7 @@ def init_database():
         # Setup additional tables
         setup_feedback_table()
         setup_uploaded_files_table()
+        setup_interview_tables()  # NEW: Mock Interview tables
         
         # Mark as initialized
         _database_initialized = True
@@ -1251,3 +1246,59 @@ def get_all_uploaded_files():
         except Exception as e:
             print(f"Error getting uploaded files: {e}")
             return []
+
+
+def setup_interview_tables():
+    """Create mock_interviews and interview_feedback tables if they don't exist"""
+    try:
+        with get_database_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS mock_interviews (
+                    id               SERIAL PRIMARY KEY,
+                    user_id          INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                    job_role         VARCHAR(200),
+                    job_description  TEXT,
+                    experience_level VARCHAR(100),
+                    interview_type   VARCHAR(50),
+                    difficulty       VARCHAR(30),
+                    language         VARCHAR(30) DEFAULT 'English',
+                    question_count   INTEGER DEFAULT 5,
+                    questions        JSONB DEFAULT '[]',
+                    expected_answers JSONB DEFAULT '[]',
+                    skills_to_test   JSONB DEFAULT '[]',
+                    status           VARCHAR(30) DEFAULT 'pending',
+                    created_at       TIMESTAMP DEFAULT NOW()
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS interview_feedback (
+                    id                    SERIAL PRIMARY KEY,
+                    interview_id          INTEGER REFERENCES mock_interviews(id) ON DELETE CASCADE,
+                    user_id               INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                    transcript            JSONB DEFAULT '[]',
+                    total_score           INTEGER DEFAULT 0,
+                    communication_score   INTEGER DEFAULT 0,
+                    technical_score       INTEGER DEFAULT 0,
+                    problem_solving_score INTEGER DEFAULT 0,
+                    confidence_score      INTEGER DEFAULT 0,
+                    relevance_score       INTEGER DEFAULT 0,
+                    category_scores       JSONB DEFAULT '{}',
+                    strengths             TEXT,
+                    areas_for_improvement TEXT,
+                    per_question_feedback JSONB DEFAULT '[]',
+                    skill_gaps            JSONB DEFAULT '[]',
+                    final_assessment      TEXT,
+                    improvement_plan      TEXT,
+                    filler_word_count     INTEGER DEFAULT 0,
+                    avg_answer_length     FLOAT DEFAULT 0,
+                    pdf_path              VARCHAR(500),
+                    created_at            TIMESTAMP DEFAULT NOW()
+                )
+            """)
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_mock_interviews_user ON mock_interviews(user_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_interview_fb_user ON interview_feedback(user_id)")
+            conn.commit()
+            print("✅ Interview tables ready")
+    except Exception as e:
+        print(f"⚠️ Interview table setup warning: {e}")

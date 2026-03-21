@@ -203,6 +203,7 @@ class ResumeApp:
             "🌐 PORTFOLIO GENERATOR": self.render_portfolio_generator,
             "📚 MY HISTORY": self.render_user_history,
             "🎓 LEARNING": self.render_learning_dashboard,
+            "🎤 MOCK INTERVIEW": self.render_mock_interview,
             "🎯 JOB SEARCH": self.render_job_search,
             "💬 FEEDBACK": self.render_feedback_page,
             "ℹ️ ABOUT": self.render_about
@@ -217,12 +218,10 @@ class ResumeApp:
         self.portfolio_generator = PortfolioGenerator()
         self.job_roles = JOB_ROLES
         
-        # Initialize database and create default admin
-        init_database()
-        
-        # Debug admin table
-        from config.database import debug_admin_table
-        debug_admin_table()
+        # Initialize database only once per session
+        if 'db_initialized' not in st.session_state:
+            init_database()
+            st.session_state.db_initialized = True
 
         # Initialize session state
         if 'user_id' not in st.session_state:
@@ -230,15 +229,19 @@ class ResumeApp:
         if 'selected_role' not in st.session_state:
             st.session_state.selected_role = None
 
-        # Load external CSS
-        with open('style/style.css') as f:
-            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+        # Load external CSS (cached)
+        if 'css_loaded' not in st.session_state:
+            with open('style/style.css') as f:
+                st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+            st.session_state.css_loaded = True
 
-        # Load Google Fonts
-        st.markdown("""
-            <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-        """, unsafe_allow_html=True)
+        # Load Google Fonts and Font Awesome (cached)
+        if 'fonts_loaded' not in st.session_state:
+            st.markdown("""
+                <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+            """, unsafe_allow_html=True)
+            st.session_state.fonts_loaded = True
 
         if 'resume_data' not in st.session_state:
             st.session_state.resume_data = []
@@ -630,7 +633,7 @@ class ResumeApp:
     def load_image(self, image_name):
         """Load image from static directory"""
         try:
-            image_path = f"c:/Users/shree/Downloads/smart-resume-ai/{image_name}"
+            image_path = os.path.join(os.path.dirname(__file__), "assets", image_name)
             with open(image_path, "rb") as f:
                 image_bytes = f.read()
             encoded = base64.b64encode(image_bytes).decode()
@@ -3354,7 +3357,7 @@ class ResumeApp:
                             else:
                                 st.error(result["message"])
                             # Refresh the page to show updated stats
-                            st.experimental_rerun()
+                            st.rerun()
 
                     # Get detailed AI analysis statistics
                     from config.database import get_detailed_ai_analysis_stats
@@ -4857,6 +4860,11 @@ class ResumeApp:
                 st.session_state.page = cleaned_name
                 st.rerun()
 
+    def render_mock_interview(self):
+        """Render the AI Mock Interview page"""
+        from pages.mock_interview import render_mock_interview
+        render_mock_interview()
+
     def render_job_search(self):
         """Render the job search page"""
         render_job_search()
@@ -4890,7 +4898,11 @@ class ResumeApp:
 
     def main(self):
         """Main application entry point"""
-        
+
+        # ── Instant dark overlay — eliminates white flash on ALL page transitions ──
+        from auth.login_page import pre_inject_dark_overlay
+        pre_inject_dark_overlay()
+
         # ============ AUTHENTICATION CHECK ============
         # Check if user is authenticated
         if not AuthManager.is_authenticated():
@@ -4933,7 +4945,7 @@ class ResumeApp:
             # Navigation buttons
             for page_name in self.pages.keys():
                 if st.button(page_name, use_container_width=True):
-                    cleaned_name = page_name.lower().replace(" ", "_").replace("🏠", "").replace("🔍", "").replace("📝", "").replace("📊", "").replace("🎯", "").replace("💬", "").replace("ℹ️", "").strip()
+                    cleaned_name = page_name.lower().replace(" ", "_").replace("🏠", "").replace("🔍", "").replace("📝", "").replace("📊", "").replace("🎯", "").replace("💬", "").replace("ℹ️", "").replace("🎤", "").replace("📚", "").replace("🎓", "").replace("🌐", "").strip()
                     st.session_state.page = cleaned_name
                     st.rerun()
 
@@ -5023,7 +5035,7 @@ class ResumeApp:
                 return
         
         # Create a mapping of cleaned page names to original names
-        page_mapping = {name.lower().replace(" ", "_").replace("🏠", "").replace("🔍", "").replace("📝", "").replace("📊", "").replace("🎯", "").replace("💬", "").replace("ℹ️", "").strip(): name 
+        page_mapping = {name.lower().replace(" ", "_").replace("🏠", "").replace("🔍", "").replace("📝", "").replace("📊", "").replace("🎯", "").replace("💬", "").replace("ℹ️", "").replace("🎤", "").replace("📚", "").replace("🎓", "").replace("🌐", "").strip(): name 
                        for name in self.pages.keys()}
         
         # Render the appropriate page

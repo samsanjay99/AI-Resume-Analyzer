@@ -1,4 +1,4 @@
-﻿"""
+"""
 Login Page - Glass card over background image
 """
 import streamlit as st
@@ -27,17 +27,13 @@ def _inject_base_css(bg_b64):
     [data-testid="stSidebar"] {{display: none !important;}}
     [data-testid="stHeader"] {{background: transparent !important;}}
 
-    /* Flash prevention overlay - covers unstyled flash, fades out after 0.4s */
-    [data-testid="stAppViewContainer"]::after {{
-        content: "";
-        position: fixed;
-        inset: 0;
-        background: #0f172a;
-        z-index: 99999;
-        animation: fadeOutOverlay 0.01s 0.4s forwards;
+    /* Flash prevention - hide content instantly, show only after our CSS loads */
+    [data-testid="stAppViewContainer"] {{
+        opacity: 0;
+        animation: revealPage 0.01s 0.05s forwards !important;
     }}
-    @keyframes fadeOutOverlay {{
-        to {{ opacity: 0; pointer-events: none; visibility: hidden; }}
+    @keyframes revealPage {{
+        to {{ opacity: 1; }}
     }}
 
     [data-testid="stAppViewContainer"] {{
@@ -198,6 +194,35 @@ def render_login_page():
     if signup_clicked:
         st.session_state["show_signup"] = True
         st.rerun()
+
+
+def pre_inject_dark_overlay():
+    """
+    Call this FIRST in app.main() before ANY other st call.
+    Injects an instant dark overlay so there is zero white flash on page transitions.
+    This CSS is injected synchronously before Streamlit renders anything else.
+    """
+    st.markdown("""
+    <style>
+    /* Instant dark flash prevention - applied before ANY content renders */
+    html, body { background-color: #0f172a !important; }
+    [data-testid="stAppViewContainer"],
+    [data-testid="stApp"] {
+        background-color: #0f172a !important;
+    }
+    /* Hide sidebar and header flash */
+    [data-testid="stSidebar"],
+    [data-testid="stHeader"],
+    header, footer { opacity: 0; }
+    /* Restore with micro-delay after CSS loads */
+    [data-testid="stSidebar"],
+    [data-testid="stHeader"],
+    header, footer {
+        animation: restoreEl 0.01s 0.08s forwards;
+    }
+    @keyframes restoreEl { to { opacity: 1; } }
+    </style>
+    """, unsafe_allow_html=True)
 
 
 def render_signup_page():

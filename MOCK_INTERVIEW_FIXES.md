@@ -44,7 +44,11 @@
 **Problem:** VAPI token was not configured in environment variables.
 
 **Solution:**
+<<<<<<< HEAD
 - Added `VAPI_WEB_TOKEN=YOUR TOKEN` to `.env` file
+=======
+- Added `VAPI_WEB_TOKEN= YOUR TOKEN` to `.env` file
+>>>>>>> 57df11582b3fd49613c1747d3ea4a9c65d0de02e
 - This enables premium voice features for mock interviews
 
 **File Modified:**

@@ -218,10 +218,12 @@ class ResumeApp:
         self.portfolio_generator = PortfolioGenerator()
         self.job_roles = JOB_ROLES
         
-        # Initialize database only once per session
-        if 'db_initialized' not in st.session_state:
-            init_database()
-            st.session_state.db_initialized = True
+        # Initialize database and create default admin
+        init_database()
+        
+        # Debug admin table
+        from config.database import debug_admin_table
+        debug_admin_table()
 
         # Initialize session state
         if 'user_id' not in st.session_state:
@@ -229,19 +231,15 @@ class ResumeApp:
         if 'selected_role' not in st.session_state:
             st.session_state.selected_role = None
 
-        # Load external CSS (cached)
-        if 'css_loaded' not in st.session_state:
-            with open('style/style.css') as f:
-                st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-            st.session_state.css_loaded = True
+        # Load external CSS
+        with open('style/style.css') as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
-        # Load Google Fonts and Font Awesome (cached)
-        if 'fonts_loaded' not in st.session_state:
-            st.markdown("""
-                <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-            """, unsafe_allow_html=True)
-            st.session_state.fonts_loaded = True
+        # Load Google Fonts
+        st.markdown("""
+            <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+        """, unsafe_allow_html=True)
 
         if 'resume_data' not in st.session_state:
             st.session_state.resume_data = []

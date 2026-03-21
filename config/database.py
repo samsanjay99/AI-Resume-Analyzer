@@ -42,8 +42,8 @@ def get_connection_pool():
             )
             
             _connection_pool = psycopg2.pool.ThreadedConnectionPool(
-                minconn=1,  # Reduced from 2 for faster startup
-                maxconn=10,  # Reduced from 20 for better resource usage
+                minconn=2,  # Keep 2 connections ready
+                maxconn=20,  # Allow up to 20 connections
                 dsn=optimized_dsn
             )
             print("✅ Optimized database connection pool created")
@@ -114,10 +114,16 @@ def clear_cache():
     _cache = {}
 
 def warm_cache():
-    """Pre-load frequently accessed data into cache - DISABLED for faster loading"""
-    # Disabled to improve page load speed
-    # Cache will be populated on-demand instead
-    pass
+    """Pre-load frequently accessed data into cache"""
+    try:
+        print("🔥 Warming up cache...")
+        # Pre-load database status
+        get_database_status()
+        # Pre-load resume stats
+        get_resume_stats()
+        print("✅ Cache warmed up")
+    except Exception as e:
+        print(f"⚠️ Cache warm-up warning: {e}")
 
 def init_database():
     """Initialize database tables (runs only once)"""

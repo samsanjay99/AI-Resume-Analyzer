@@ -234,7 +234,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 </div>
 <div class="err" id="err-box"></div>
 
-<script>
+<script type="module">
 const VAPI_TOKEN    = "{vapi_token}";
 const ASSISTANT_ID  = "{vapi_assistant_id}";
 const QUESTIONS     = {questions_js};
@@ -568,96 +568,99 @@ function startFreeMode() {{
   speak(greeting,()=>setTimeout(()=>askQuestion(0),500));
 }}
 
-// ── VAPI path — uses pre-built assistant via ID + overrides ──
+// ── VAPI path — ESM import, matches working app.html exactly ──
 async function tryVapi() {{
-  await loadScript('https://cdn.jsdelivr.net/npm/@vapi-ai/web@2.3.8/dist/vapi.iife.js');
-  S.vapiObj=new window.Vapi(VAPI_TOKEN);
+  // Load VAPI via ESM (same CDN as the working app.html reference)
+  const {{ default: Vapi }} = await import('https://esm.sh/@vapi-ai/web');
+  S.vapiObj = new Vapi(VAPI_TOKEN);
 
-  S.vapiObj.on('call-start',()=>{{
-    S.usingVapi=true;
-    D.badge.className='badge badge-vapi';D.badge.textContent='⚡ VAPI · Clara Voice';
-    showUI();setChip('c-speaking','🔊 AI Interviewer speaking…');
+  S.vapiObj.on('call-start', () => {{
+    S.usingVapi = true;
+    D.badge.className   = 'badge badge-vapi';
+    D.badge.textContent = '⚡ VAPI · Clara Voice';
+    showUI();
+    setChip('c-speaking', '🔊 Clara is greeting you…');
   }});
 
-  S.vapiObj.on('call-end',()=>{{
-    clearInterval(S.timerH);D.btnE.style.display='none';
-    D.aiAv.className='av ai-bg';D.usrAv.className='av usr-bg';
-    D.aiW.classList.remove('on');D.usrW.classList.remove('on');
-    setChip('c-done','✅ Interview complete');
-    D.doneC.style.display='block';sendResults();
+  S.vapiObj.on('call-end', () => {{
+    clearInterval(S.timerH);
+    D.btnE.style.display = 'none';
+    D.btnR.style.display = 'none';
+    D.aiAv.className = 'av ai-bg'; D.usrAv.className = 'av usr-bg';
+    D.aiW.classList.remove('on'); D.usrW.classList.remove('on');
+    setChip('c-done', '✅ Interview complete');
+    D.doneC.style.display = 'block';
+    sendResults();
   }});
 
-  S.vapiObj.on('speech-start',()=>{{
-    D.aiAv.className='av ai-bg speaking';D.usrAv.className='av usr-bg';
-    D.aiW.classList.add('on');D.usrW.classList.remove('on');
-    setChip('c-speaking','🔊 AI is speaking…');
+  S.vapiObj.on('speech-start', () => {{
+    D.aiAv.className = 'av ai-bg speaking'; D.usrAv.className = 'av usr-bg';
+    D.aiW.classList.add('on'); D.usrW.classList.remove('on');
+    setChip('c-speaking', '🔊 Clara is speaking…');
   }});
 
-  S.vapiObj.on('speech-end',()=>{{
-    D.aiAv.className='av ai-bg';D.aiW.classList.remove('on');
-    D.usrAv.className='av usr-bg listening';D.usrW.classList.add('on');
-    setChip('c-listening','🎤 Listening to you…');
+  S.vapiObj.on('speech-end', () => {{
+    D.aiAv.className = 'av ai-bg'; D.aiW.classList.remove('on');
+    D.usrAv.className = 'av usr-bg listening'; D.usrW.classList.add('on');
+    setChip('c-listening', '🎤 Listening to you…');
   }});
 
-  S.vapiObj.on('message',msg=>{{
-    if(msg.type==='transcript'&&msg.transcriptType==='partial'){{
-      if(msg.role==='user') updatePartial(msg.transcript);
+  S.vapiObj.on('message', (msg) => {{
+    // Partial transcript — show live as user speaks
+    if (msg?.type === 'transcript' && msg.transcriptType === 'partial') {{
+      if (msg.role === 'user') updatePartial(msg.transcript);
     }}
-    if(msg.type==='transcript'&&msg.transcriptType==='final'){{
-      const key=fp(msg.role==='assistant'?'ai':'user',msg.transcript);
-      if(S.msgSet.has(key)) return;  // STRICT DEDUP
+    // Final transcript — deduplicated, add to panel and messages array
+    if (msg?.type === 'transcript' && msg.transcriptType === 'final') {{
+      const key = fp(msg.role === 'assistant' ? 'ai' : 'user', msg.transcript);
+      if (S.msgSet.has(key)) return; // strict dedup
       S.msgSet.add(key);
-      const cleanRole=msg.role==='assistant'?'ai':'user';
-      S.messages.push({{role:cleanRole,content:msg.transcript.trim(),ts:new Date().toISOString()}});
+      const role = msg.role === 'assistant' ? 'ai' : 'user';
+      S.messages.push({{ role, content: msg.transcript.trim(), ts: new Date().toISOString() }});
 
-      if(cleanRole==='user'){{
-        finalPartial(); // remove partial bubble
-        addBubble('user',msg.transcript.trim(),false); // add final bubble ONCE (deduped by msgSet above)
-        const answered=S.messages.filter(m=>m.role==='user').length;
-        upProg(Math.min(answered,TOTAL_Q));
-        D.usrAv.className='av usr-bg';D.usrW.classList.remove('on');
-        D.aiAv.className='av ai-bg thinking';
-        setChip('c-thinking','💭 AI thinking…');
-        setTimeout(()=>{{D.aiAv.className='av ai-bg';}},800);
+      if (role === 'user') {{
+        finalPartial();
+        addBubble('user', msg.transcript.trim(), false);
+        const answered = S.messages.filter(m => m.role === 'user').length;
+        upProg(Math.min(answered, TOTAL_Q));
+        D.usrAv.className = 'av usr-bg'; D.usrW.classList.remove('on');
+        D.aiAv.className = 'av ai-bg thinking';
+        setChip('c-thinking', '💭 Clara is thinking…');
+        setTimeout(() => {{ D.aiAv.className = 'av ai-bg'; }}, 800);
       }} else {{
-        addBubble('ai',msg.transcript.trim(),false);
-        const aiMsgs=S.messages.filter(m=>m.role==='ai');
-        const qi=aiMsgs.length-1;
-        if(qi<TOTAL_Q){{
-          D.qNum.textContent='Question '+(qi+1)+' of '+TOTAL_Q;
-          D.qTxt.textContent=QUESTIONS[qi];
-          D.qCard.style.display='block';upProg(qi);
+        addBubble('ai', msg.transcript.trim(), false);
+        // Update question card to show what Clara is asking
+        const aiCount = S.messages.filter(m => m.role === 'ai').length;
+        const qi = aiCount - 1;
+        if (qi >= 0 && qi < TOTAL_Q) {{
+          D.qNum.textContent  = 'Question ' + (qi + 1) + ' of ' + TOTAL_Q;
+          D.qTxt.textContent  = QUESTIONS[qi];
+          D.qCard.style.display = 'block';
+          upProg(qi);
         }}
       }}
     }}
   }});
 
-  S.vapiObj.on('error',err=>{{
-    console.warn('VAPI:',err);
-    if(!S.usingVapi){{
-      S.vapiObj=null;
-      showErr('VAPI failed — switching to free mode…');
-      setTimeout(()=>{{hideErr();startFreeMode();}},2000);
+  S.vapiObj.on('error', (e) => {{
+    console.error('VAPI error:', e);
+    if (!S.usingVapi) {{
+      // Failed before call even started — fall back to free mode
+      S.vapiObj = null;
+      showErr('VAPI could not connect — switching to free voice mode…');
+      setTimeout(() => {{ hideErr(); startFreeMode(); }}, 2000);
     }}
   }});
 
-  // Start using pre-built assistant ID — inject questions + username at runtime
+  // ── START — exact same pattern as working app.html ──────────
+  // variableValues passed DIRECTLY (not wrapped in assistantOverrides)
   await S.vapiObj.start(ASSISTANT_ID, {{
-    assistantOverrides: {{
-      variableValues: {{
-        username   : CNAME,
-        job_role   : ROLE,
-        questions  : Q_LINES,
-        total_q    : String(TOTAL_Q),
-        first_q    : QUESTIONS[0] || ''
-      }},
-      // Ensure it ends after all questions — append our end phrases
-      endCallPhrases: [
-        'that completes our interview',
-        'interview is now complete',
-        'we will review your answers',
-        'have a great day'
-      ]
+    variableValues: {{
+      username : CNAME,
+      job_role : ROLE,
+      questions: Q_LINES,
+      total_q  : String(TOTAL_Q),
+      first_q  : QUESTIONS[0] || ''
     }}
   }});
 }}
@@ -705,14 +708,19 @@ function sendResults() {{
 
 // ── Entry ──────────────────────────────────────────────
 async function startInterview() {{
-  hideErr();D.btnS.disabled=true;D.btnS.textContent='Starting…';
-  if(VAPI_TOKEN&&VAPI_TOKEN.length>10){{
-    setChip('c-thinking','⚡ Connecting to VAPI…');
-    try{{await tryVapi();}}
-    catch(err){{
-      console.warn('VAPI failed:',err);
-      showErr('VAPI: '+err.message+'. Using free mode…');
-      setTimeout(()=>{{hideErr();startFreeMode();}},2000);
+  hideErr();
+  D.btnS.disabled    = true;
+  D.btnS.textContent = 'Connecting…';
+
+  if (VAPI_TOKEN && VAPI_TOKEN.length > 10) {{
+    setChip('c-thinking', '⚡ Connecting to VAPI · Clara…');
+    try {{
+      await tryVapi();
+      // call-start event will fire showUI() and update badge
+    }} catch(err) {{
+      console.warn('VAPI failed:', err);
+      showErr('VAPI could not connect (' + (err.message||err) + '). Switching to free voice mode…');
+      setTimeout(() => {{ hideErr(); startFreeMode(); }}, 2500);
     }}
   }} else {{
     startFreeMode();
@@ -729,13 +737,7 @@ function endEarly() {{
   D.doneC.style.display='block';sendResults();
 }}
 
-function loadScript(src) {{
-  return new Promise((res,rej)=>{{
-    if(document.querySelector('script[src="'+src+'"]')){{res();return;}}
-    const s=document.createElement('script');s.src=src;s.onload=res;
-    s.onerror=()=>rej(new Error('Load failed: '+src));document.head.appendChild(s);
-  }});
-}}
+// loadScript no longer needed — VAPI loaded via dynamic ESM import
 
 if(S.synth.onvoiceschanged!==undefined)S.synth.onvoiceschanged=()=>S.synth.getVoices();
 S.synth.getVoices();

@@ -234,7 +234,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 </div>
 <div class="err" id="err-box"></div>
 
-<script type="module">
+<script>
 const VAPI_TOKEN    = "{vapi_token}";
 const ASSISTANT_ID  = "{vapi_assistant_id}";
 const QUESTIONS     = {questions_js};
@@ -410,7 +410,15 @@ function speak(text,onDone) {{
 // ── STT with smart silence detection ──────────────────
 function listenForAnswer(onResult) {{
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){{onResult('(Chrome or Edge required for voice)');return;}}
+  if(!SR){{
+    // Speech recognition not available - show error and stop
+    showErr('⚠️ Speech recognition not available. Please use Chrome or Edge browser.');
+    S.isRunning=false;
+    D.btnE.style.display='none';
+    D.btnR.style.display='none';
+    setChip('c-idle','❌ Browser not supported');
+    return;
+  }}
   if(S.recog){{try{{S.recog.stop();}}catch(e){{}}}}
 
   S.recog=new SR();
@@ -568,13 +576,18 @@ function startFreeMode() {{
   speak(greeting,()=>setTimeout(()=>askQuestion(0),500));
 }}
 
-// ── VAPI path — ESM import, matches working app.html exactly ──
+// ── VAPI path — ESM import matching working test-vapi/app.html ──
 async function tryVapi() {{
-  // Load VAPI via ESM (same CDN as the working app.html reference)
-  const {{ default: Vapi }} = await import('https://esm.sh/@vapi-ai/web');
+  console.log('[VAPI] Loading SDK via ESM import…');
+  // Use the exact same import as the working test-vapi/app.html
+  const Vapi = (await import('https://esm.sh/@vapi-ai/web')).default;
+  
+  console.log('[VAPI] SDK loaded, creating instance…');
   S.vapiObj = new Vapi(VAPI_TOKEN);
+  console.log('[VAPI] Instance created, attaching event listeners…');
 
   S.vapiObj.on('call-start', () => {{
+    console.log('[VAPI] call-start fired');
     S.usingVapi = true;
     D.badge.className   = 'badge badge-vapi';
     D.badge.textContent = '⚡ VAPI · Clara Voice';
@@ -583,6 +596,7 @@ async function tryVapi() {{
   }});
 
   S.vapiObj.on('call-end', () => {{
+    console.log('[VAPI] call-end fired');
     clearInterval(S.timerH);
     D.btnE.style.display = 'none';
     D.btnR.style.display = 'none';
@@ -643,7 +657,7 @@ async function tryVapi() {{
   }});
 
   S.vapiObj.on('error', (e) => {{
-    console.error('VAPI error:', e);
+    console.error('[VAPI] error event:', e);
     if (!S.usingVapi) {{
       // Failed before call even started — fall back to free mode
       S.vapiObj = null;
@@ -652,8 +666,8 @@ async function tryVapi() {{
     }}
   }});
 
-  // ── START — exact same pattern as working app.html ──────────
-  // variableValues passed DIRECTLY (not wrapped in assistantOverrides)
+  // ── START the call ──────────────────────────────────────
+  console.log('[VAPI] Starting call with assistant:', ASSISTANT_ID);
   await S.vapiObj.start(ASSISTANT_ID, {{
     variableValues: {{
       username : CNAME,
@@ -663,6 +677,7 @@ async function tryVapi() {{
       first_q  : QUESTIONS[0] || ''
     }}
   }});
+  console.log('[VAPI] start() resolved successfully');
 }}
 
 // ── Send results to Streamlit ──────────────────────────
@@ -674,36 +689,24 @@ function sendResults() {{
     timestamp:new Date().toISOString()}};
   const str=JSON.stringify(payload);
 
-  // Update done card first
+  // Update done card
   document.getElementById('done-msg').innerHTML=
-    '<b style="color:#4CAF50">'+userMsgs.length+' answers captured.</b><br>'+
-    '<span style="color:#aaa;font-size:.78rem">Redirecting to evaluation… please wait.</span>';
+    '<b style="color:#4CAF50">'+userMsgs.length+' answers captured!</b><br>'+
+    '<span style="color:#aaa;font-size:.78rem">Results saved. Go back to the Streamlit tab — evaluation will start automatically.<br>'+
+    'You can close this tab now.</span>';
 
-  // Write to storage as backup
+  // PRIMARY: Save to localStorage — the Streamlit page polls this
   try{{
-    sessionStorage.setItem('iv_result_'+IV_ID,str);
-    sessionStorage.setItem('iv_ready','1');
-    localStorage.setItem('iv_result_'+IV_ID,str);
-    localStorage.setItem('iv_ready','1');
+    localStorage.setItem('iv_result_'+IV_ID, str);
+    localStorage.setItem('iv_ready', '1');
+    console.log('[Interview] Results saved to localStorage for interview', IV_ID);
   }}catch(e){{console.warn('Storage write:',e);}}
 
-  // PRIMARY: Navigate window.top directly to trigger Streamlit rerun
-  // This is the most reliable method — fires after a short delay to
-  // let the done card render first
-  setTimeout(function(){{
-    try{{
-      var base = window.top.location.href.split('?')[0];
-      var msgs = encodeURIComponent(JSON.stringify(S.messages));
-      window.top.location.href = base + '?iv_done=' + IV_ID + '&iv_data=' + msgs;
-    }}catch(e){{
-      // Cross-origin fallback: postMessage then storage poll
-      try{{window.parent.postMessage(payload,'*');}}catch(e2){{}}
-      try{{window.top.postMessage(payload,'*');}}catch(e2){{}}
-      document.getElementById('done-msg').innerHTML=
-        '<b style="color:#4CAF50">'+userMsgs.length+' answers captured.</b><br>'+
-        '<span style="color:#aaa;font-size:.76rem">Scroll up and click Evaluate Manually if the report does not appear automatically.</span>';
-    }}
-  }}, 2200);
+  // BACKUP: Also try sessionStorage
+  try{{
+    sessionStorage.setItem('iv_result_'+IV_ID, str);
+    sessionStorage.setItem('iv_ready', '1');
+  }}catch(e){{}}
 }}
 
 // ── Entry ──────────────────────────────────────────────
@@ -718,8 +721,10 @@ async function startInterview() {{
       await tryVapi();
       // call-start event will fire showUI() and update badge
     }} catch(err) {{
-      console.warn('VAPI failed:', err);
-      showErr('VAPI could not connect (' + (err.message||err) + '). Switching to free voice mode…');
+      console.error('[VAPI] tryVapi failed:', err);
+      console.error('[VAPI] Error type:', typeof err, 'Constructor:', err?.constructor?.name);
+      const msg = err?.message || (typeof err === 'string' ? err : JSON.stringify(err) || 'Unknown error');
+      showErr('VAPI could not connect (' + msg + '). Switching to free voice mode…');
       setTimeout(() => {{ hideErr(); startFreeMode(); }}, 2500);
     }}
   }} else {{

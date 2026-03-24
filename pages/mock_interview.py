@@ -10,7 +10,7 @@ from datetime import datetime
 
 from auth.auth_manager import AuthManager
 from utils.interview_manager import InterviewManager
-from utils.interview_component import build_interview_component
+from utils.interview_standalone import build_standalone_html
 from config.job_roles import JOB_ROLES
 from config.course_recommendation_manager import CourseRecommendationManager
 
@@ -222,81 +222,169 @@ def render_live():
     cfg       = st.session_state.iv_cfg
     name      = AuthManager.get_current_user_name()
 
-    # ── Check URL params FIRST (set by interview component via window.top) ──
+    # ══════════════════════════════════════════════════════════════
+    # RECEIVE RESULTS — check query params first on every render
+    # ══════════════════════════════════════════════════════════════
     params = st.query_params
     if params.get("iv_done") == str(iv_id) and "iv_data" in params:
         try:
-            raw = params["iv_data"]
-            transcript = json.loads(raw)
+            transcript = json.loads(params["iv_data"])
             if transcript:
                 st.session_state.iv_transcript = transcript
-                st.session_state.iv_phase = "evaluating"
+                st.session_state.iv_phase      = "evaluating"
                 st.query_params.clear()
                 st.rerun()
         except Exception as e:
-            print(f"URL param decode: {e}")
+            print(f"Param decode error: {e}")
             st.query_params.clear()
 
-    st.markdown(f"""
-    <div style='background:linear-gradient(135deg,#0a0a1a,#16213e);
-    padding:1rem 1.5rem;border-radius:12px;margin-bottom:1rem;
-    border:1px solid rgba(76,175,80,.35);text-align:center;'>
-    <h3 style='color:#4CAF50;margin:0;'>🎤 Live Interview — {cfg["job_role"]}</h3>
-    <p style='color:#aaa;font-size:.82rem;margin:.3rem 0 0;'>
-    Difficulty: <b style='color:#fff;'>{cfg["difficulty"].capitalize()}</b> &nbsp;·&nbsp;
-    {len(questions)} questions &nbsp;·&nbsp;
-    <b style='color:#FF9800;'>Speak naturally — evaluation is fully automatic</b>
-    </p>
-    </div>""", unsafe_allow_html=True)
-
-    # ── Main interview component (scrollable) ──────────────
-    html = build_interview_component(
-        questions=questions,
-        job_role=cfg["job_role"],
-        candidate_name=name,
-        interview_id=iv_id,
-        vapi_token=os.getenv("VAPI_WEB_TOKEN",""),
-        vapi_assistant_id=os.getenv("VAPI_ASSISTANT_ID","ab9b228d-3b3f-4ff0-9678-a6de2c20674c"),
+    # ══════════════════════════════════════════════════════════════
+    # GENERATE HTML FILE - Save to static folder
+    # Streamlit serves static/ at /app/static/ (enableStaticServing=true)
+    # ══════════════════════════════════════════════════════════════
+    from utils.interview_standalone import build_standalone_html
+    
+    # Generate HTML
+    html = build_standalone_html(
+        questions          = questions,
+        job_role           = cfg["job_role"],
+        candidate_name     = name,
+        interview_id       = iv_id,
+        vapi_token         = os.getenv("VAPI_WEB_TOKEN", ""),
+        vapi_assistant_id  = os.getenv("VAPI_ASSISTANT_ID",
+                                       "ab9b228d-3b3f-4ff0-9678-a6de2c20674c"),
     )
-    components.html(html, height=750, scrolling=True)
+    
+    # Save to static folder
+    static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+    os.makedirs(static_dir, exist_ok=True)
+    filename = f"interview_{iv_id}.html"
+    filepath = os.path.join(static_dir, filename)
+    
+    with open(filepath, "w", encoding="utf-8-sig") as f:
+        f.write(html)
 
-    # ── Status info ───────────────────────────────────────
+    # ══════════════════════════════════════════════════════════════
+    # INFO BANNER
+    # ══════════════════════════════════════════════════════════════
+    st.markdown(f"""
+    <div style='background:linear-gradient(135deg,#1a1a2e,#16213e);
+    padding:1.8rem 2rem;border-radius:14px;text-align:center;
+    border:2px solid rgba(76,175,80,.4);margin-bottom:1rem;'>
+    <div style='font-size:2.8rem;'>🎤</div>
+    <h3 style='color:#4CAF50;margin:.4rem 0;'>Interview Ready</h3>
+    <p style='color:#aaa;font-size:.86rem;margin:0 0 .4rem;'>
+    <b style='color:white;'>{cfg["job_role"]}</b> &nbsp;·&nbsp;
+    {len(questions)} questions &nbsp;·&nbsp; VAPI Clara + Free Voice fallback
+    </p>
+    <p style='color:#ccc;font-size:.82rem;margin:0;'>
+    Click the button below to open the interview in a new tab.
+    </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ══════════════════════════════════════════════════════════════
+    # OPEN INTERVIEW BUTTON
+    # Uses JS to build the correct URL from window.location.origin
+    # so it works both locally (localhost:8501) and on Streamlit Cloud
+    # ══════════════════════════════════════════════════════════════
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        # JS-based button that constructs the full URL at runtime
+        # This avoids the file:/// issue on Windows local dev
+        components.html(f"""
+        <div style="display:flex;justify-content:center;">
+        <button onclick="
+            var url = window.location.origin + '/app/static/{filename}';
+            window.open(url, '_blank');
+        " style="
+            padding:12px 32px;border-radius:50px;border:none;
+            font-size:1rem;font-weight:700;cursor:pointer;color:white;
+            background:linear-gradient(135deg,#4CAF50,#388E3C);
+            box-shadow:0 4px 18px rgba(76,175,80,.38);
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+        ">🎙️ Open Interview</button>
+        </div>
+        """, height=60)
+
+    st.caption(
+        "Chrome or Edge required · Allow microphone when prompted · "
+        "Complete the interview, then click 'Get My Results' below."
+    )
+
     st.markdown("---")
-    st.markdown("""
-    <div style='background:rgba(76,175,80,.07);border:1px solid rgba(76,175,80,.2);
-    border-radius:8px;padding:10px 14px;font-size:.82rem;color:#81C784;'>
-    ✅ <b>Fully automatic</b> — the report appears automatically when all questions are done.
-    Use the fallback below only if nothing happens after 30 seconds.
-    </div>""", unsafe_allow_html=True)
+    
+    # ══════════════════════════════════════════════════════════════
+    # MANUAL RESULTS CHECK
+    # User clicks this button after completing the interview
+    # ══════════════════════════════════════════════════════════════
+    st.info(
+        "⏳ **Complete the interview above.** When all questions are answered, "
+        "click the button below to see your results."
+    )
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("✅ Get My Results", type="primary", use_container_width=True, key=f"check_results_{iv_id}"):
+            # Re-check query params (interview page navigates here with ?iv_done=ID&iv_data=...)
+            params = st.query_params
+            if params.get("iv_done") == str(iv_id) and "iv_data" in params:
+                try:
+                    transcript = json.loads(params["iv_data"])
+                    if transcript:
+                        st.session_state.iv_transcript = transcript
+                        st.session_state.iv_phase = "evaluating"
+                        st.query_params.clear()
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"Error reading results: {e}")
+            else:
+                st.warning("No results found yet. Complete the interview first — the page will auto-redirect when done.")
 
-    with st.expander("🔧 Manual fallback (only if auto-eval doesn't trigger)", expanded=False):
-        st.markdown("*Type your answers below only if the automatic evaluation did not start.*")
-        manual_lines = []
+    # ══════════════════════════════════════════════════════════════
+    # MANUAL TEXT FALLBACK (last resort)
+    # ══════════════════════════════════════════════════════════════
+    st.markdown("---")
+    with st.expander("🔧 Manual fallback — only if automatic results don't appear",
+                     expanded=False):
+        st.markdown(
+            "*Type your answers here only if you completed the interview "
+            "but no report appeared after 30 seconds.*"
+        )
+        manual_answers = []
         for i, q in enumerate(questions):
-            a = st.text_area(f"Q{i+1}: {q}", key=f"fb_{i}", height=65,
-                             placeholder="Type what you said in your voice answer...")
-            manual_lines.append(a)
+            ans = st.text_area(
+                f"Q{i+1}: {q}",
+                key=f"live_manual_{iv_id}_{i}",   # unique: includes iv_id + index
+                height=65,
+                placeholder="Type what you said in your voice answer…"
+            )
+            manual_answers.append(ans)
 
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("🧠 Evaluate Now", type="primary", use_container_width=True):
-                has_any = any(a.strip() for a in manual_lines)
-                if not has_any:
+        mc1, mc2 = st.columns(2)
+        with mc1:
+            if st.button("🧠 Evaluate My Answers", type="primary",
+                         use_container_width=True,
+                         key=f"live_eval_manual_{iv_id}"):
+                if not any(a.strip() for a in manual_answers):
                     st.error("Please type at least one answer before evaluating.")
                 else:
-                    transcript = []
-                    for q, ans in zip(questions, manual_lines):
-                        transcript.append({"role":"assistant","content":q,
-                                           "ts":datetime.now().isoformat()})
-                        ans_clean = ans.strip() or "(No answer provided for this question)"
-                        transcript.append({"role":"user","content":ans_clean,
-                                           "ts":datetime.now().isoformat()})
-                    st.session_state.iv_transcript = transcript
+                    tr = []
+                    for q, ans in zip(questions, manual_answers):
+                        tr.append({"role":"assistant","content":q,
+                                   "ts":datetime.now().isoformat()})
+                        tr.append({"role":"user",
+                                   "content": ans.strip() or "(No answer provided)",
+                                   "ts":datetime.now().isoformat()})
+                    st.session_state.iv_transcript = tr
                     st.session_state.iv_phase = "evaluating"
                     st.rerun()
-        with c2:
-            if st.button("← Back to Setup", use_container_width=True):
+        with mc2:
+            if st.button("← Back to Setup", use_container_width=True,
+                         key=f"live_back_{iv_id}"):
                 _reset(); st.rerun()
+
+
 
 
 # ──────────────────────────────────────────────────────────
@@ -590,6 +678,32 @@ def render_interview_history():
 # ──────────────────────────────────────────────────────────
 # MAIN ENTRY
 # ──────────────────────────────────────────────────────────
+def _recover_session_from_db(interview_id: int):
+    """
+    If iv_q / iv_cfg are missing from session state (e.g. after a long popup session),
+    reload them from the database so render_evaluating() doesn't crash.
+    """
+    if st.session_state.get("iv_q") and st.session_state.get("iv_cfg"):
+        return  # already have everything we need
+
+    try:
+        row = InterviewManager.get_interview_by_id(interview_id)
+        if not row:
+            return
+        st.session_state.iv_id     = interview_id
+        st.session_state.iv_q      = row["questions"]
+        st.session_state.iv_exp    = row["expected_answers"]
+        st.session_state.iv_skills = row["skills_to_test"]
+        st.session_state.iv_cfg    = {
+            "job_role"       : row["job_role"],
+            "difficulty"     : row["difficulty"],
+            "interview_type" : row["interview_type"],
+            "question_count" : row["question_count"],
+        }
+    except Exception as e:
+        print(f"Session recovery failed: {e}")
+
+
 def render_mock_interview():
     if not AuthManager.is_authenticated():
         st.warning("⚠️ Please log in to access Mock Interview")
@@ -598,29 +712,41 @@ def render_mock_interview():
     InterviewManager.setup_interview_tables()
     manager = InterviewManager()
 
-    # Auto-receive transcript from interview component (via window.top URL navigation)
+    # ── Receive transcript delivered by the interview popup ───────────────
+    # The standalone interview page does:
+    #   window.opener.location.href = window.location.origin + '/?iv_done=ID&iv_data=...'
+    # OR if opener is null:
+    #   window.location.href = same URL (popup tab navigates itself to Streamlit)
+    # Either way, Streamlit reloads and we read st.query_params here.
     params = st.query_params
     if "iv_done" in params and "iv_data" in params:
         try:
             iv_done_id = int(params["iv_done"])
-            raw = params["iv_data"]
+            raw        = params["iv_data"]
             transcript = json.loads(raw)
+
             if transcript:
-                # Accept if session matches OR if session has same iv_id
                 expected_id = st.session_state.get("iv_id")
+                # Accept if IDs match OR if no ID in session (e.g. session expired)
                 if expected_id is None or iv_done_id == expected_id:
-                    st.session_state.iv_id = iv_done_id
+                    st.session_state.iv_id        = iv_done_id
                     st.session_state.iv_transcript = transcript
-                    st.session_state.iv_phase = "evaluating"
+                    # Recover iv_q / iv_cfg from DB if session state was lost
+                    _recover_session_from_db(iv_done_id)
+                    st.session_state.iv_phase      = "evaluating"
                     st.query_params.clear()
-                st.rerun()
+                    st.rerun()  # ← only rerun when we actually set the phase
+                else:
+                    # ID mismatch — clear params and continue normally
+                    st.query_params.clear()
             else:
                 st.query_params.clear()
+
         except Exception as e:
-            print(f"Bridge delivery error: {e}")
+            print(f"iv_done param error: {e}")
             st.query_params.clear()
 
-    phase = st.session_state.get("iv_phase","setup")
+    phase = st.session_state.get("iv_phase", "setup")
     if   phase == "setup":      render_setup(manager)
     elif phase == "ready":      render_ready()
     elif phase == "live":       render_live()

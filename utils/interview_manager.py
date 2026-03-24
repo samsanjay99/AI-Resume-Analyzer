@@ -469,6 +469,34 @@ Return ONLY valid JSON, no markdown:
             return None
 
     @staticmethod
+    def get_interview_by_id(interview_id):
+        """Load a single interview session from DB — used for session-state recovery."""
+        try:
+            with get_database_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT id, user_id, job_role, difficulty, interview_type,
+                           question_count, questions, expected_answers, skills_to_test,
+                           status, created_at
+                    FROM mock_interviews WHERE id = %s
+                """, (interview_id,))
+                row = cursor.fetchone()
+                if not row:
+                    return None
+                return {
+                    "id": row[0], "user_id": row[1], "job_role": row[2],
+                    "difficulty": row[3], "interview_type": row[4],
+                    "question_count": row[5],
+                    "questions": row[6] if isinstance(row[6], list) else json.loads(row[6] or "[]"),
+                    "expected_answers": row[7] if isinstance(row[7], list) else json.loads(row[7] or "[]"),
+                    "skills_to_test": row[8] if isinstance(row[8], list) else json.loads(row[8] or "[]"),
+                    "status": row[9], "created_at": row[10],
+                }
+        except Exception as e:
+            print(f"Error loading interview {interview_id}: {e}")
+            return None
+
+    @staticmethod
     def get_user_interviews(user_id):
         try:
             with get_database_connection() as conn:

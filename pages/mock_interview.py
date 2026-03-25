@@ -223,7 +223,9 @@ def render_live():
     name      = AuthManager.get_current_user_name()
 
     # ══════════════════════════════════════════════════════════════
-    # RECEIVE RESULTS — check query params first on every render
+    # RECEIVE RESULTS — check query params on every render
+    # The interview page navigates window.opener to Streamlit with
+    # ?iv_done=ID&iv_data=... which triggers this on page load.
     # ══════════════════════════════════════════════════════════════
     params = st.query_params
     if params.get("iv_done") == str(iv_id) and "iv_data" in params:
@@ -239,12 +241,22 @@ def render_live():
             st.query_params.clear()
 
     # ══════════════════════════════════════════════════════════════
-    # GENERATE HTML FILE - Save to static folder
-    # Streamlit serves static/ at /app/static/ (enableStaticServing=true)
+    # GENERATE HTML FILE - Save to static folder, serve via mini HTTP server
+    # Streamlit's static server sends .html as text/plain (broken).
+    # We spin up a tiny HTTP server on port 8765 that sends text/html correctly.
     # ══════════════════════════════════════════════════════════════
+    from utils.interview_server import ensure_interview_server
     from utils.interview_standalone import build_standalone_html
-    
-    # Generate HTML
+
+    # Determine Streamlit base URL for the return redirect after interview
+    try:
+        host = st.context.headers.get("Host", "localhost:8501")
+        scheme = "https" if ("streamlit.app" in host or "share.streamlit.io" in host) else "http"
+        streamlit_base_url = f"{scheme}://{host}"
+    except Exception:
+        streamlit_base_url = "http://localhost:8501"
+
+    # Generate HTML with correct return URL baked in
     html = build_standalone_html(
         questions          = questions,
         job_role           = cfg["job_role"],
@@ -253,16 +265,21 @@ def render_live():
         vapi_token         = os.getenv("VAPI_WEB_TOKEN", ""),
         vapi_assistant_id  = os.getenv("VAPI_ASSISTANT_ID",
                                        "ab9b228d-3b3f-4ff0-9678-a6de2c20674c"),
+        streamlit_base_url = streamlit_base_url,
     )
-    
+
     # Save to static folder
     static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
     os.makedirs(static_dir, exist_ok=True)
     filename = f"interview_{iv_id}.html"
     filepath = os.path.join(static_dir, filename)
-    
-    with open(filepath, "w", encoding="utf-8-sig") as f:
+
+    with open(filepath, "w", encoding="utf-8") as f:
         f.write(html)
+
+    # Start mini HTTP server (serves static/ with correct MIME types)
+    server_base = ensure_interview_server(static_dir)
+    interview_url = f"{server_base}/{filename}"
 
     # ══════════════════════════════════════════════════════════════
     # INFO BANNER
@@ -290,22 +307,12 @@ def render_live():
     # ══════════════════════════════════════════════════════════════
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # JS-based button that constructs the full URL at runtime
-        # This avoids the file:/// issue on Windows local dev
-        components.html(f"""
-        <div style="display:flex;justify-content:center;">
-        <button onclick="
-            var url = window.location.origin + '/app/static/{filename}';
-            window.open(url, '_blank');
-        " style="
-            padding:12px 32px;border-radius:50px;border:none;
-            font-size:1rem;font-weight:700;cursor:pointer;color:white;
-            background:linear-gradient(135deg,#4CAF50,#388E3C);
-            box-shadow:0 4px 18px rgba(76,175,80,.38);
-            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-        ">🎙️ Open Interview</button>
-        </div>
-        """, height=60)
+        st.link_button(
+            "🎙️ Open Interview",
+            interview_url,
+            type="primary",
+            use_container_width=True,
+        )
 
     st.caption(
         "Chrome or Edge required · Allow microphone when prompted · "
@@ -320,26 +327,8 @@ def render_live():
     # ══════════════════════════════════════════════════════════════
     st.info(
         "⏳ **Complete the interview above.** When all questions are answered, "
-        "click the button below to see your results."
+        "the results will open automatically in this tab."
     )
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        if st.button("✅ Get My Results", type="primary", use_container_width=True, key=f"check_results_{iv_id}"):
-            # Re-check query params (interview page navigates here with ?iv_done=ID&iv_data=...)
-            params = st.query_params
-            if params.get("iv_done") == str(iv_id) and "iv_data" in params:
-                try:
-                    transcript = json.loads(params["iv_data"])
-                    if transcript:
-                        st.session_state.iv_transcript = transcript
-                        st.session_state.iv_phase = "evaluating"
-                        st.query_params.clear()
-                        st.rerun()
-                except Exception as e:
-                    st.error(f"Error reading results: {e}")
-            else:
-                st.warning("No results found yet. Complete the interview first — the page will auto-redirect when done.")
 
     # ══════════════════════════════════════════════════════════════
     # MANUAL TEXT FALLBACK (last resort)

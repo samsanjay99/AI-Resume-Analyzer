@@ -361,12 +361,8 @@ Return ONLY valid JSON, no markdown:
             data["success"] = True
             return data
         except Exception as e:
-            print(f"Evaluation error: {e}")
-            return self._empty_feedback()
-            return data
-        except Exception as e:
-            print(f"Evaluation error: {e}")
-            return self._empty_feedback()
+            print(f"Evaluation error: {e} — using rule-based fallback scorer")
+            return self._fallback_score(transcript, questions, filler_count, avg_len)
 
     def _count_filler_words(self, transcript):
         fillers = ["um", "uh", "like", "you know", "basically", "literally",
@@ -384,6 +380,69 @@ Return ONLY valid JSON, no markdown:
         if not answers:
             return 0.0
         return round(sum(len(a.split()) for a in answers) / len(answers), 1)
+
+    def _fallback_score(self, transcript, questions, filler_count, avg_len):
+        """Rule-based scorer used when Gemini is unavailable. Never returns 0/100."""
+        user_answers = [m for m in transcript if m.get("role") == "user"]
+        total_q      = len(questions)
+        answered     = len(user_answers)
+
+        # Completion rate (0-40 pts)
+        completion   = min(answered / max(total_q, 1), 1.0)
+        comp_score   = round(completion * 40)
+
+        # Average answer length score (0-30 pts): 50+ words = full marks
+        len_score    = min(round((avg_len / 50) * 30), 30)
+
+        # Filler word penalty (0-10 pts deducted)
+        filler_pen   = min(filler_count * 2, 10)
+
+        # Base quality score (0-30 pts): reward non-trivial answers
+        quality = 0
+        for ans in user_answers:
+            words = len(ans.get("content", "").split())
+            if words >= 30:
+                quality += 10
+            elif words >= 15:
+                quality += 6
+            elif words >= 5:
+                quality += 3
+        quality_score = min(round((quality / max(answered, 1))), 30)
+
+        total = max(comp_score + len_score + quality_score - filler_pen, 10)
+
+        per_q = []
+        for i, q in enumerate(questions):
+            ans = user_answers[i]["content"] if i < answered else "(No answer)"
+            wc  = len(ans.split())
+            sc  = min(round((wc / 50) * 100), 100) if wc > 0 else 0
+            per_q.append({
+                "question": q, "score": sc,
+                "feedback": f"Answer captured ({wc} words). AI evaluation unavailable — scored by length heuristic.",
+                "suggested_rephrasing": "",
+                "key_points_missed": []
+            })
+
+        cat = round(total * 0.9)
+        return {
+            "success": True,
+            "total_score": total,
+            "category_scores": {
+                "communication":       {"score": cat, "comment": "Scored by rule-based fallback (AI unavailable)."},
+                "technical_knowledge": {"score": cat, "comment": "Scored by rule-based fallback (AI unavailable)."},
+                "problem_solving":     {"score": cat, "comment": "Scored by rule-based fallback (AI unavailable)."},
+                "confidence_clarity":  {"score": cat, "comment": "Scored by rule-based fallback (AI unavailable)."},
+                "relevance":           {"score": cat, "comment": "Scored by rule-based fallback (AI unavailable)."},
+            },
+            "per_question_feedback": per_q,
+            "strengths": f"Completed {answered}/{total_q} questions with an average answer length of {avg_len} words.",
+            "areas_for_improvement": "AI evaluation was unavailable. Re-run the interview for a detailed Gemini analysis.",
+            "skill_gaps": [],
+            "final_assessment": f"Rule-based score: {total}/100 based on completion rate and answer length. Gemini evaluation failed — please retry.",
+            "improvement_plan": "1. Retry the interview when Gemini API quota resets.\n2. Aim for 50+ word answers per question.\n3. Reduce filler words (um, uh, like).",
+            "filler_word_count": filler_count,
+            "avg_answer_length": avg_len,
+        }
 
     def _empty_feedback(self):
         return {

@@ -30,7 +30,7 @@ def build_standalone_html(
     interview_id: int,
     vapi_token: str,
     vapi_assistant_id: str,
-    streamlit_base_url: str = "",  # unused — JS uses window.location.origin instead
+    streamlit_base_url: str = "",
 ) -> str:
     """
     Returns a complete standalone HTML string.
@@ -40,6 +40,9 @@ def build_standalone_html(
     questions_js  = json.dumps(questions)
     q_lines       = "\n".join(f"{i+1}. {q}" for i, q in enumerate(questions))
     first_q       = questions[0] if questions else "Tell me about yourself."
+
+    # Base URL for returning results to Streamlit after interview completes
+    return_url_base = streamlit_base_url.rstrip("/") if streamlit_base_url else "http://localhost:8501"
 
     # Escape for safe embedding in JS string literals
     cname_js   = candidate_name.replace("'", "\\'").replace('"', '\\"')
@@ -148,7 +151,7 @@ body{{
 /* ── Transcript ── */
 .tx-panel{{width:100%;max-width:680px;background:rgba(255,255,255,.03);
           border:1px solid rgba(255,255,255,.07);border-radius:11px;overflow:hidden;
-          max-height:220px;display:none;flex-direction:column}}
+          max-height:60vh;min-height:400px;display:none;flex-direction:column}}
 .tx-head{{padding:5px 12px;background:rgba(255,255,255,.04);
          font-size:.65rem;color:#888;text-transform:uppercase;letter-spacing:1px;
          border-bottom:1px solid rgba(255,255,255,.05);
@@ -157,6 +160,7 @@ body{{
 @keyframes lb{{0%,100%{{opacity:1}}50%{{opacity:.2}}}}
 .tx-body{{flex:1;overflow-y:auto;padding:8px 12px;
          display:flex;flex-direction:column;gap:5px;
+         font-size:15px;line-height:1.8;
          scrollbar-width:thin;scrollbar-color:#333 transparent}}
 .bbl{{padding:6px 10px;border-radius:9px;font-size:.82rem;
      line-height:1.5;max-width:92%;animation:fi .22s ease}}
@@ -295,11 +299,9 @@ const CNAME        = '{cname_js}';
 const ROLE         = '{role_js}';
 const Q_LINES      = '{q_lines_js}';
 const FIRST_Q      = '{first_q_js}';
-// Streamlit base URL — derived from where THIS page is hosted.
-// Since this file is served by Streamlit at /app/static/interview_ID.html,
-// window.location.origin gives us exactly http://localhost:8501 (or cloud URL).
-// This is always correct — no Python computation needed.
-const STREAMLIT_BASE = window.location.origin;
+// Streamlit base URL — injected by Python so the interview page (served on
+// port 8765) can redirect back to Streamlit (port 8501) after completion.
+const STREAMLIT_BASE = '{return_url_base}';
 
 // ═══════════════════════════════════════════════════════
 // TUNING
@@ -454,10 +456,8 @@ function stopSilBar() {{
 
 // ═══════════════════════════════════════════════════════
 // SEND RESULTS BACK TO STREAMLIT
-// Strategy (in order):
-//  1. window.opener.location.href  — works when opened via target="_blank" link
-//  2. window.location.href         — navigates THIS tab to Streamlit (always works)
-//  3. localStorage                 — last-resort signal for Streamlit to read
+// ═══════════════════════════════════════════════════════
+// SEND RESULTS BACK TO STREAMLIT
 // ═══════════════════════════════════════════════════════
 function sendResults() {{
   const userMsgs = S.messages.filter(m => m.role === 'user');
@@ -472,46 +472,24 @@ function sendResults() {{
   document.getElementById('done-msg').innerHTML =
     '<b style="color:#4CAF50">'+userMsgs.length+' answer'+
     (userMsgs.length!==1?'s':'')+' captured!</b><br>'+
-    '<span style="color:#aaa;font-size:.75rem">Sending results to the main app…</span>';
+    '<span style="color:#aaa;font-size:.76rem">Taking you to your results now…</span>';
 
-  // Build the Streamlit return URL.
-  // window.location.origin = http://localhost:8501 (same server, always correct)
-  const msgsJson  = JSON.stringify(S.messages);
-  const encoded   = encodeURIComponent(msgsJson);
-  // window.location.origin = http://localhost:8501 (the Streamlit server)
-  // The Streamlit app always lives at the root path /
-  const returnUrl = window.location.origin + '/?iv_done={interview_id}&iv_data=' + encoded;
+  const msgsJson = JSON.stringify(S.messages);
+  const encoded  = encodeURIComponent(msgsJson);
+  const returnUrl = STREAMLIT_BASE + '/?iv_done=' + IV_ID + '&iv_data=' + encoded;
 
-  // ── Strategy A: localStorage (most reliable, no navigation needed) ────
-  // Streamlit page has an inline JS that checks localStorage every 10s (via st.rerun).
-  // Write FIRST before any navigation attempts.
-  try {{
-    localStorage.setItem('iv_result_{interview_id}', msgsJson);
-    localStorage.setItem('iv_done_id', '{interview_id}');
-    console.log('[Interview] Results written to localStorage');
-  }} catch(e) {{ console.warn('[Interview] localStorage failed:', e); }}
+  // Save to localStorage as backup
+  try {{ localStorage.setItem('iv_result_' + IV_ID, msgsJson); }} catch(e) {{}}
 
-  // ── Strategy B: window.opener (only available if opened via window.open()) ─
-  let usedOpener = false;
+  // Navigate opener tab if available, otherwise navigate this tab
   try {{
     if (window.opener && !window.opener.closed) {{
       window.opener.location.href = returnUrl;
-      usedOpener = true;
-      console.log('[Interview] Navigated opener tab to results');
-      setTimeout(() => {{ try {{ window.close(); }} catch(e) {{}} }}, 2500);
-    }}
-  }} catch(e) {{ console.warn('[Interview] opener failed:', e); }}
-
-  // ── Strategy C: navigate THIS tab to Streamlit with results ──────────────
-  // Always works — this tab becomes the results page.
-  // Runs whether or not opener succeeded (opener might be Streamlit waiting tab).
-  if (!usedOpener) {{
-    setTimeout(() => {{
-      document.getElementById('done-msg').innerHTML =
-        '<b style="color:#4CAF50">'+userMsgs.length+' answers captured!</b><br>'+
-        '<span style="color:#aaa;font-size:.76rem">Taking you to your results now…</span>';
+    }} else {{
       window.location.href = returnUrl;
-    }}, 2000);
+    }}
+  }} catch(e) {{
+    window.location.href = returnUrl;
   }}
 }}
 
@@ -668,12 +646,12 @@ function askQuestion(idx) {{
   if (!S.isRunning) return;
   S.currentQ=idx; S.followUpCount=0;
   const q = QUESTIONS[idx];
-  upProg(idx);
   D.qNum.textContent='Question '+(idx+1)+' of '+TOTAL_Q;
   D.qTxt.textContent=q; D.qCard.style.display='block';
   pushMsg('ai', q);
   setChip('c-speaking','🔊 Question '+(idx+1)+'…');
   speak(q, () => {{
+    upProg(idx);  // progress updates AFTER AI finishes speaking
     setChip('c-listening','🎤 Your turn — answer Q'+(idx+1));
     listenForAnswer(ans => processAnswer(ans));
   }});
@@ -770,7 +748,7 @@ async function tryVapi() {{
         if (qi >= 0 && qi < TOTAL_Q) {{
           D.qNum.textContent='Question '+(qi+1)+' of '+TOTAL_Q;
           D.qTxt.textContent=QUESTIONS[qi];
-          D.qCard.style.display='block'; upProg(qi);
+          D.qCard.style.display='block';
         }}
       }}
     }}
@@ -874,7 +852,7 @@ def save_interview_page(
         vapi_assistant_id=vapi_assistant_id,
     )
 
-    with open(filepath, "w", encoding="utf-8-sig") as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         f.write(html)
 
     # Streamlit serves ./static/ at /app/static/

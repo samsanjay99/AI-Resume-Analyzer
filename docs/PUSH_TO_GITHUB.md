@@ -1,8 +1,8 @@
 # 🚀 Push to GitHub - Step by Step Guide
 
 ## Repository Information
-- **Repository**: https://github.com/samsanjay99/AI-Resume-Analyzer
-- **Owner**: samsanjay99
+- **Repository**: https://github.com/YOUR_USERNAME/AI-Resume-Analyzer
+- **Owner**: YOUR_USERNAME
 - **Project**: AI-Resume-Analyzer
 
 ---
@@ -42,12 +42,12 @@ git remote -v
 **If remote exists but is wrong**, remove and re-add:
 ```bash
 git remote remove origin
-git remote add origin https://github.com/samsanjay99/AI-Resume-Analyzer.git
+git remote add origin https://github.com/YOUR_USERNAME/AI-Resume-Analyzer.git
 ```
 
 **If no remote exists**, add it:
 ```bash
-git remote add origin https://github.com/samsanjay99/AI-Resume-Analyzer.git
+git remote add origin https://github.com/YOUR_USERNAME/AI-Resume-Analyzer.git
 ```
 
 ### Step 3: Stage All Changes
@@ -130,7 +130,7 @@ git push -u origin main --force
 ### Option 1: HTTPS (Recommended)
 
 When prompted, enter:
-- **Username**: samsanjay99
+- **Username**: YOUR_USERNAME
 - **Password**: Your GitHub Personal Access Token (not your password!)
 
 **Don't have a token?** Create one:
@@ -144,7 +144,7 @@ When prompted, enter:
 If you have SSH keys set up:
 ```bash
 # Use SSH URL instead
-git remote set-url origin git@github.com:samsanjay99/AI-Resume-Analyzer.git
+git remote set-url origin git@github.com:YOUR_USERNAME/AI-Resume-Analyzer.git
 git push -u origin main
 ```
 
@@ -157,7 +157,7 @@ If you're starting fresh:
 ```bash
 # Initialize and push
 git init
-git remote add origin https://github.com/samsanjay99/AI-Resume-Analyzer.git
+git remote add origin https://github.com/YOUR_USERNAME/AI-Resume-Analyzer.git
 git add .
 git commit -m "feat: Complete AI Resume Analyzer platform with optimizations"
 git branch -M main
@@ -168,7 +168,7 @@ If repo already has content:
 
 ```bash
 # Pull, merge, and push
-git remote add origin https://github.com/samsanjay99/AI-Resume-Analyzer.git
+git remote add origin https://github.com/YOUR_USERNAME/AI-Resume-Analyzer.git
 git add .
 git commit -m "feat: Complete AI Resume Analyzer platform with optimizations"
 git branch -M main
@@ -182,7 +182,7 @@ git push -u origin main
 
 After pushing, verify on GitHub:
 
-1. Go to https://github.com/samsanjay99/AI-Resume-Analyzer
+1. Go to https://github.com/YOUR_USERNAME/AI-Resume-Analyzer
 2. Check that all files are there
 3. Verify README.md displays correctly
 4. Check that .env is NOT visible
@@ -236,7 +236,7 @@ If you plan to use GitHub Actions:
 
 ```bash
 git remote remove origin
-git remote add origin https://github.com/samsanjay99/AI-Resume-Analyzer.git
+git remote add origin https://github.com/YOUR_USERNAME/AI-Resume-Analyzer.git
 ```
 
 ### Error: "failed to push some refs"

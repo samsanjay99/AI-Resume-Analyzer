@@ -26,10 +26,12 @@ env/
 ENV/
 .venv
 
-# Environment Variables
+# Environment Variables — NEVER commit these
 .env
 .env.local
 .env.*.local
+utils/.env
+test-vapi/.env
 
 # IDE
 .vscode/
@@ -41,13 +43,13 @@ ENV/
 
 # Streamlit
 .streamlit/secrets.toml
-.streamlit/config.toml
 
 # Uploads and Generated Files
 uploads/
 generated_portfolios/
 temp_portfolios/
 analysis_reports/
+interview_reports/
 *.pdf
 *.docx
 *.zip
@@ -61,6 +63,12 @@ temp_portfolios/*
 !temp_portfolios/.gitkeep
 analysis_reports/*
 !analysis_reports/.gitkeep
+interview_reports/*
+!interview_reports/.gitkeep
+
+# Interview result temp files (written by mini HTTP server, read by Streamlit)
+static/iv_result_*.json
+static/interview_*.html
 
 # Database
 *.db
@@ -83,11 +91,6 @@ logs/
 # OS
 Thumbs.db
 .DS_Store
-
-# Project Specific
-animated-sign-up-design/node_modules/
-animated-sign-up-design/dist/
-animated-sign-up-design/build/
 
 # Keep empty directories
 !.gitkeep

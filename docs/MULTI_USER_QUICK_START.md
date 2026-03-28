@@ -149,7 +149,7 @@ The only difference: everything is now scoped to YOUR account!
 
 Admin functionality is separate from user accounts:
 - Admin login is still in the sidebar
-- Admin credentials: sam@gmail.com / sanjay2026
+- Admin credentials: admin@example.com / sanjay2026
 - Admin can see all users' data in dashboard
 
 ## 📈 Performance

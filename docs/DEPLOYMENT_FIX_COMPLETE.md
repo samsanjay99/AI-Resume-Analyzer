@@ -161,7 +161,7 @@ st.markdown(f"""
 
 Add your Netlify token:
 ```env
-NETLIFY_TOKEN=nfp_your_token_here
+NETLIFY_TOKEN=YOUR_NETLIFY_TOKEN_token_here
 ```
 
 Get token from: https://app.netlify.com/user/applications

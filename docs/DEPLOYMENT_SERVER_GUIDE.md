@@ -361,7 +361,7 @@ CORS(app)
 
 ### .env File:
 ```env
-NETLIFY_TOKEN=nfp_MKoSQsV63cWtw7EuXdvjC6VSy7nNEA3fc9e8
+NETLIFY_TOKEN=YOUR_NETLIFY_TOKEN
 FLASK_SECRET_KEY=your-secret-key-here
 ```
 

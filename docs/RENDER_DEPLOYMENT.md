@@ -4,13 +4,13 @@
 
 ### Method 1: One-Click Deploy (Recommended)
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/samsanjay99/AI-Resume-Analyzer)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/YOUR_USERNAME/AI-Resume-Analyzer)
 
 ### Method 2: Manual Deployment
 
 1. **Fork/Clone the Repository**
    ```bash
-   git clone https://github.com/samsanjay99/AI-Resume-Analyzer.git
+   git clone https://github.com/YOUR_USERNAME/AI-Resume-Analyzer.git
    cd AI-Resume-Analyzer
    ```
 
@@ -149,7 +149,7 @@ After successful deployment:
    - Check admin dashboard
 
 2. **Admin Access**
-   - Email: `sam@gmail.com`
+   - Email: `admin@example.com`
    - Password: `sanjay2026`
 
 3. **Share Your App**

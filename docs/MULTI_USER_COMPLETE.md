@@ -162,7 +162,7 @@ Every user has a completely isolated workspace:
 - All existing data assigned to this user
 
 **Admin Account (separate system):**
-- Email: sam@gmail.com
+- Email: admin@example.com
 - Password: sanjay2026
 - Access to admin dashboard
 

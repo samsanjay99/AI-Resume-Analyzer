@@ -5,7 +5,7 @@
 ### Admin Login
 ```
 Location: Bottom of sidebar
-Credentials: sam@gmail.com / sanjay2026
+Credentials: admin@example.com / sanjay2026
 ```
 
 ### Access Dashboard
@@ -119,6 +119,6 @@ python test_admin_access_control.py
 
 ---
 
-**Admin Email**: sam@gmail.com  
+**Admin Email**: admin@example.com  
 **Password**: sanjay2026  
 **Status**: Production Ready ✅

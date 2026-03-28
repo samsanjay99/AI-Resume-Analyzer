@@ -29,7 +29,7 @@ streamlit run app.py
 
 ## 🔐 Admin Access
 
-- **Email**: sam@gmail.com
+- **Email**: admin@example.com
 - **Password**: sanjay2026
 
 ## 📊 What's Working

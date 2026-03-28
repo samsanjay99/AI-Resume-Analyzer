@@ -38,7 +38,7 @@ Complete guide for deploying Smart Resume AI to production.
    - Click "Advanced settings"
    - Add secrets in TOML format:
    ```toml
-   DATABASE_URL = "postgresql://user:pass@host/db"
+   DATABASE_URL = "postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require"
    GOOGLE_API_KEY = "your_api_key"
    NETLIFY_TOKEN = "your_token"
    ```
@@ -237,7 +237,7 @@ docker-compose up -d
 ### Required
 
 ```env
-DATABASE_URL=postgresql://user:pass@host:5432/db
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require
 GOOGLE_API_KEY=your_google_gemini_api_key
 NETLIFY_TOKEN=your_netlify_token
 ```
@@ -288,7 +288,7 @@ curl https://your-app.com/_stcore/health
 
 ### 2. Change Default Credentials
 
-- Login with `sam@gmail.com` / `sanjay99`
+- Login with `admin@example.com` / `sanjay99`
 - Go to Admin Dashboard
 - Change password immediately
 

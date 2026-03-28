@@ -223,10 +223,26 @@ def render_live():
     name      = AuthManager.get_current_user_name()
 
     # ══════════════════════════════════════════════════════════════
-    # RECEIVE RESULTS — check query params on every render
-    # The interview page navigates window.opener to Streamlit with
-    # ?iv_done=ID&iv_data=... which triggers this on page load.
+    # RECEIVE RESULTS — poll for iv_result_{id}.json written by
+    # the mini HTTP server when the interview page POSTs /submit.
+    # No URL navigation → no session loss → no login redirect.
     # ══════════════════════════════════════════════════════════════
+    static_dir  = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+    result_file = os.path.join(static_dir, f"iv_result_{iv_id}.json")
+
+    if os.path.exists(result_file):
+        try:
+            with open(result_file, "r", encoding="utf-8") as _f:
+                transcript = json.load(_f)
+            if transcript:
+                os.remove(result_file)   # clean up
+                st.session_state.iv_transcript = transcript
+                st.session_state.iv_phase      = "evaluating"
+                st.rerun()
+        except Exception as e:
+            print(f"Result file read error: {e}")
+
+    # Also handle legacy query-param redirect (fallback)
     params = st.query_params
     if params.get("iv_done") == str(iv_id) and "iv_data" in params:
         try:
@@ -326,9 +342,26 @@ def render_live():
     # User clicks this button after completing the interview
     # ══════════════════════════════════════════════════════════════
     st.info(
-        "⏳ **Complete the interview above.** When all questions are answered, "
-        "the results will open automatically in this tab."
+        "⏳ **Complete the interview above.** When done, click the button below — "
+        "or wait a few seconds and it will auto-detect."
     )
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🔄 Check for Results", use_container_width=True, key=f"poll_{iv_id}"):
+            if os.path.exists(result_file):
+                try:
+                    with open(result_file, "r", encoding="utf-8") as _f:
+                        transcript = json.load(_f)
+                    if transcript:
+                        os.remove(result_file)
+                        st.session_state.iv_transcript = transcript
+                        st.session_state.iv_phase = "evaluating"
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"Error reading results: {e}")
+            else:
+                st.warning("No results yet — complete the interview first.")
 
     # ══════════════════════════════════════════════════════════════
     # MANUAL TEXT FALLBACK (last resort)

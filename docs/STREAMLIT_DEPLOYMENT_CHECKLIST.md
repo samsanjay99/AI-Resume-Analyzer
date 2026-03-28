@@ -30,7 +30,7 @@
 
 2. **Create New App**
    - Click "New app"
-   - Select repository: `samsanjay99/AI-Resume-Analyzer`
+   - Select repository: `YOUR_USERNAME/AI-Resume-Analyzer`
    - Branch: `main`
    - Main file: `app.py`
 
@@ -40,7 +40,7 @@
    
    ```toml
    # Database (Required)
-   DATABASE_URL = "postgresql://user:password@host:5432/database"
+   DATABASE_URL = "postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require"
    
    # AI Services (Required)
    GOOGLE_API_KEY = "your_google_gemini_api_key"
@@ -138,7 +138,7 @@ Error: No module named 'dotenv' (Python 3.13)
 After deployment:
 
 1. **Test Login**
-   - Try logging in with: `sam@gmail.com` / `sanjay99`
+   - Try logging in with: `admin@example.com` / `sanjay99`
    - Change password immediately!
 
 2. **Test Resume Analysis**
@@ -202,7 +202,7 @@ When you push changes to GitHub:
 **⚠️ IMPORTANT: Change these after first login!**
 
 ```
-Email: sam@gmail.com
+Email: admin@example.com
 Password: sanjay99
 ```
 

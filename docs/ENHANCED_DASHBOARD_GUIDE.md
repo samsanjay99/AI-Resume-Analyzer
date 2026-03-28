@@ -50,7 +50,7 @@ The dashboard now has 4 main tabs:
 ## How to Use
 
 ### Accessing the Dashboard
-1. Login as admin (sam@gmail.com / sanjay2026)
+1. Login as admin (admin@example.com / sanjay2026)
 2. Navigate to "📊 DASHBOARD" from sidebar
 3. Dashboard loads with overview metrics
 4. Scroll down to see the 4 admin tabs

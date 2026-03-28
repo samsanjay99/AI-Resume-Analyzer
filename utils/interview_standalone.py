@@ -458,8 +458,10 @@ function stopSilBar() {{
 // SEND RESULTS BACK TO STREAMLIT
 // ═══════════════════════════════════════════════════════
 // SEND RESULTS BACK TO STREAMLIT
+// POSTs transcript to the mini HTTP server → writes iv_result_ID.json
+// Streamlit polls for that file → no URL navigation → no session loss
 // ═══════════════════════════════════════════════════════
-function sendResults() {{
+async function sendResults() {{
   const userMsgs = S.messages.filter(m => m.role === 'user');
 
   if (userMsgs.length === 0) {{
@@ -472,24 +474,32 @@ function sendResults() {{
   document.getElementById('done-msg').innerHTML =
     '<b style="color:#4CAF50">'+userMsgs.length+' answer'+
     (userMsgs.length!==1?'s':'')+' captured!</b><br>'+
-    '<span style="color:#aaa;font-size:.76rem">Taking you to your results now…</span>';
+    '<span style="color:#aaa;font-size:.76rem">Sending to Streamlit for evaluation…</span>';
 
-  const msgsJson = JSON.stringify(S.messages);
-  const encoded  = encodeURIComponent(msgsJson);
-  const returnUrl = STREAMLIT_BASE + '/?iv_done=' + IV_ID + '&iv_data=' + encoded;
+  const payload = {{ interview_id: IV_ID, messages: S.messages }};
 
-  // Save to localStorage as backup
-  try {{ localStorage.setItem('iv_result_' + IV_ID, msgsJson); }} catch(e) {{}}
-
-  // Navigate opener tab if available, otherwise navigate this tab
   try {{
-    if (window.opener && !window.opener.closed) {{
-      window.opener.location.href = returnUrl;
+    // POST to the mini server's /submit endpoint (same origin: 127.0.0.1:8765)
+    const res = await fetch('/submit', {{
+      method: 'POST',
+      headers: {{ 'Content-Type': 'application/json' }},
+      body: JSON.stringify(payload)
+    }});
+    if (res.ok) {{
+      document.getElementById('done-msg').innerHTML =
+        '<b style="color:#4CAF50">✅ Results sent!</b><br>'+
+        '<span style="color:#aaa;font-size:.76rem">Switch back to the Streamlit tab — your report is loading…</span>';
+      console.log('[Interview] Results POSTed successfully');
     }} else {{
-      window.location.href = returnUrl;
+      throw new Error('Server returned ' + res.status);
     }}
   }} catch(e) {{
-    window.location.href = returnUrl;
+    // Fallback: write to localStorage so user can manually retrieve
+    console.warn('[Interview] POST failed, using localStorage fallback:', e);
+    try {{ localStorage.setItem('iv_result_' + IV_ID, JSON.stringify(S.messages)); }} catch(_) {{}}
+    document.getElementById('done-msg').innerHTML =
+      '<b style="color:#FF9800">⚠️ Auto-send failed.</b><br>'+
+      '<span style="color:#aaa;font-size:.75rem">Switch to the Streamlit tab and click "Get My Results".</span>';
   }}
 }}
 

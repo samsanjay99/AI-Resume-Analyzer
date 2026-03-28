@@ -5,7 +5,7 @@
 ### 1. Streamlit Cloud (Recommended)
 1. Go to [share.streamlit.io](https://share.streamlit.io)
 2. Connect your GitHub account
-3. Select repository: `samsanjay99/AI-Resume-Analyzer`
+3. Select repository: `YOUR_USERNAME/AI-Resume-Analyzer`
 4. Set main file path: `app.py`
 5. Click "Deploy"
 
@@ -17,7 +17,7 @@ git push heroku main
 ```
 
 ### 3. Render Deployment (Recommended for Docker)
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/samsanjay99/AI-Resume-Analyzer)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/YOUR_USERNAME/AI-Resume-Analyzer)
 
 **Manual Steps:**
 1. Go to [render.com](https://render.com)
@@ -36,7 +36,7 @@ git push heroku main
 ### 4. Local Development
 ```bash
 # Clone repository
-git clone https://github.com/samsanjay99/AI-Resume-Analyzer.git
+git clone https://github.com/YOUR_USERNAME/AI-Resume-Analyzer.git
 cd AI-Resume-Analyzer
 
 # Install dependencies
@@ -60,7 +60,7 @@ A4F_API_KEY=your_a4f_api_key (optional)
 
 ## Admin Access
 
-- **Email**: sam@gmail.com
+- **Email**: admin@example.com
 - **Password**: sanjay2026
 
 ## Features

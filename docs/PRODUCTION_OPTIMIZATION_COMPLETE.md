@@ -270,7 +270,7 @@ def analyze_resume_with_ai(resume_text):
 
 Required variables (checked at startup):
 ```env
-DATABASE_URL=postgresql://user:pass@host/db
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require
 GOOGLE_API_KEY=your_google_api_key
 NETLIFY_TOKEN=your_netlify_token
 ```

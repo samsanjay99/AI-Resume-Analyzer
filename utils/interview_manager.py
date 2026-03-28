@@ -211,18 +211,22 @@ Return ONLY valid JSON with no markdown fences, no extra text:
 }}"""
 
         try:
-            # Try gemini-2.0-flash first, fallback to 1.5-flash if quota exceeded
-            try:
-                model = genai.GenerativeModel("gemini-2.0-flash-exp")
-                response = model.generate_content(prompt)
-            except Exception as e:
-                error_str = str(e)
-                if "429" in error_str or "quota" in error_str.lower() or "rate" in error_str.lower():
-                    print("⚠️ Gemini 2.0 quota exceeded, trying Gemini 1.5-Flash...")
-                    model = genai.GenerativeModel("gemini-1.5-flash")
+            # Try models in order of preference
+            last_err = None
+            response = None
+            for model_name in ["gemini-2.5-flash", "gemini-flash-latest", "gemini-flash-lite-latest"]:
+                try:
+                    model = genai.GenerativeModel(model_name)
                     response = model.generate_content(prompt)
-                else:
-                    raise
+                    print(f"✅ Questions generated with {model_name}")
+                    break
+                except Exception as e:
+                    last_err = e
+                    print(f"⚠️ {model_name} failed: {str(e)[:80]}, trying next...")
+                    continue
+
+            if response is None:
+                raise last_err
             
             text = response.text.strip()
             text = re.sub(r'^```json\s*', '', text)
@@ -338,18 +342,22 @@ Return ONLY valid JSON, no markdown:
 }}"""
 
         try:
-            # Try gemini-2.0-flash first, fallback to 1.5-flash if quota exceeded
-            try:
-                model = genai.GenerativeModel("gemini-2.0-flash-exp")
-                response = model.generate_content(prompt)
-            except Exception as e:
-                error_str = str(e)
-                if "429" in error_str or "quota" in error_str.lower() or "rate" in error_str.lower():
-                    print("⚠️ Gemini 2.0 quota exceeded, trying Gemini 1.5-Flash for evaluation...")
-                    model = genai.GenerativeModel("gemini-1.5-flash")
+            # Try models in order of preference
+            last_err = None
+            response = None
+            for model_name in ["gemini-2.5-flash", "gemini-flash-latest", "gemini-flash-lite-latest"]:
+                try:
+                    model = genai.GenerativeModel(model_name)
                     response = model.generate_content(prompt)
-                else:
-                    raise
+                    print(f"✅ Evaluation done with {model_name}")
+                    break
+                except Exception as e:
+                    last_err = e
+                    print(f"⚠️ {model_name} failed: {str(e)[:80]}, trying next...")
+                    continue
+
+            if response is None:
+                raise last_err
             
             text = response.text.strip()
             text = re.sub(r'^```json\s*', '', text)
@@ -359,6 +367,13 @@ Return ONLY valid JSON, no markdown:
             data["filler_word_count"] = filler_count
             data["avg_answer_length"] = avg_len
             data["success"] = True
+            # Normalize: Gemini sometimes returns lists for string fields
+            for str_field in ("strengths", "areas_for_improvement", "final_assessment", "improvement_plan"):
+                val = data.get(str_field, "")
+                if isinstance(val, list):
+                    data[str_field] = "\n".join(str(v) for v in val)
+                elif not isinstance(val, str):
+                    data[str_field] = str(val)
             return data
         except Exception as e:
             print(f"Evaluation error: {e} — using rule-based fallback scorer")
@@ -742,10 +757,16 @@ Return ONLY valid JSON, no markdown:
 
         if feedback.get("improvement_plan"):
             elements.append(Paragraph("Personalized Improvement Plan", section_style))
-            elements.append(Paragraph(feedback["improvement_plan"], body_style))
+            plan = feedback["improvement_plan"]
+            if isinstance(plan, list):
+                plan = "\n".join(str(p) for p in plan)
+            elements.append(Paragraph(str(plan), body_style))
 
         elements.append(Paragraph("Final Assessment", section_style))
-        elements.append(Paragraph(feedback.get("final_assessment", "N/A"), body_style))
+        final = feedback.get("final_assessment", "N/A")
+        if isinstance(final, list):
+            final = " ".join(str(f) for f in final)
+        elements.append(Paragraph(str(final), body_style))
 
         elements.append(Spacer(1, 20))
         elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#4CAF50")))

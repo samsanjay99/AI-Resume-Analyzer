@@ -195,7 +195,7 @@ Make sure your `.env` file contains:
 
 ```env
 # Netlify Configuration
-NETLIFY_TOKEN=nfp_your_token_here
+NETLIFY_TOKEN=YOUR_NETLIFY_TOKEN_token_here
 ```
 
 ### Port Configuration

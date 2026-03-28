@@ -207,7 +207,7 @@ streamlit run app.py
 ```
 
 ## Admin Login
-- Email: sam@gmail.com
+- Email: admin@example.com
 - Password: sanjay2026
 
 ## Support

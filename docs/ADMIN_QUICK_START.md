@@ -4,7 +4,7 @@
 
 ### Step 1: Login as Admin
 ```
-Email: sam@gmail.com
+Email: admin@example.com
 Password: sanjay2026
 ```
 
@@ -213,7 +213,7 @@ Password: sanjay2026
 
 ### Admin Credentials
 ```
-Email: sam@gmail.com
+Email: admin@example.com
 Password: sanjay2026
 ```
 

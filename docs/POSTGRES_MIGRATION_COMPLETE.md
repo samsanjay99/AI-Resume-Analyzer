@@ -82,7 +82,7 @@ python test_postgres_migration.py
 ```
 
 ### Admin Credentials
-- Email: sam@gmail.com
+- Email: admin@example.com
 - Password: sanjay2026
 
 ## Verification Checklist

@@ -184,7 +184,7 @@ def analyze_resume_with_ai(resume_text):
 
 ```env
 # Database (Required)
-DATABASE_URL=postgresql://user:pass@host/db
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require
 
 # AI Services (Required for AI features)
 GOOGLE_API_KEY=your_google_api_key

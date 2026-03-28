@@ -82,7 +82,7 @@ This document summarizes all the work done to create a secure, feature-rich admi
 1. User logs in → Sees 8 main pages
 2. Scrolls to bottom of sidebar
 3. Expands "🔐 Admin Login"
-4. Enters: sam@gmail.com / sanjay2026
+4. Enters: admin@example.com / sanjay2026
 5. Clicks "Login"
 6. Sees "📊 ADMIN DASHBOARD" button
 7. Clicks button → Access 4 admin tabs
@@ -161,7 +161,7 @@ This document summarizes all the work done to create a secure, feature-rich admi
 ## Admin Credentials
 
 ```
-Email: sam@gmail.com
+Email: admin@example.com
 Password: sanjay2026
 ```
 

@@ -1,174 +1,280 @@
+#!/usr/bin/env python3
 """
-Cleanup Script for Temporary Files
-Run this periodically to clean up old temporary files
+Automated Cleanup Script for Temporary Files
+Removes old temporary portfolios and uploads to prevent storage bloat
 """
+
 import os
 import shutil
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
+import logging
 
-def cleanup_temp_portfolios(max_age_hours=1):
-    """Clean up old temporary portfolio files"""
-    temp_path = "temp_portfolios"
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+
+class TempFileCleanup:
+    """Manages cleanup of temporary files and folders"""
     
-    if not os.path.exists(temp_path):
-        print(f"✅ No temp_portfolios folder found")
+    def __init__(self, max_age_hours=24, keep_recent=5):
+        """
+        Initialize cleanup manager
+        
+        Args:
+            max_age_hours: Delete files older than this many hours (default: 24)
+            keep_recent: Always keep this many most recent files (default: 5)
+        """
+        self.max_age_hours = max_age_hours
+        self.keep_recent = keep_recent
+        self.cutoff_time = time.time() - (max_age_hours * 3600)
+        
+        # Directories to clean
+        self.temp_dirs = [
+            'temp_portfolios',
+            'uploads',
+            'generated_portfolios'
+        ]
+    
+    def get_folder_age(self, folder_path):
+        """Get the age of a folder in seconds"""
+        try:
+            return time.time() - os.path.getctime(folder_path)
+        except:
+            return 0
+    
+    def get_file_age(self, file_path):
+        """Get the age of a file in seconds"""
+        try:
+            return time.time() - os.path.getctime(file_path)
+        except:
+            return 0
+    
+    def should_delete(self, path, age_seconds):
+        """Determine if a file/folder should be deleted"""
+        return age_seconds > (self.max_age_hours * 3600)
+    
+    def cleanup_directory(self, directory):
+        """Clean up old files in a directory"""
+        if not os.path.exists(directory):
+            logger.info(f"Directory does not exist: {directory}")
+            return
+        
+        logger.info(f"\n{'='*60}")
+        logger.info(f"Cleaning directory: {directory}")
+        logger.info(f"{'='*60}")
+        
+        # Get all items with their ages
+        items = []
+        for item_name in os.listdir(directory):
+            item_path = os.path.join(directory, item_name)
+            
+            if os.path.isdir(item_path):
+                age = self.get_folder_age(item_path)
+            else:
+                age = self.get_file_age(item_path)
+            
+            items.append({
+                'name': item_name,
+                'path': item_path,
+                'age_seconds': age,
+                'age_hours': age / 3600,
+                'is_dir': os.path.isdir(item_path),
+                'size': self.get_size(item_path)
+            })
+        
+        # Sort by age (newest first)
+        items.sort(key=lambda x: x['age_seconds'])
+        
+        # Keep the most recent items
+        items_to_keep = items[:self.keep_recent]
+        items_to_check = items[self.keep_recent:]
+        
+        deleted_count = 0
+        deleted_size = 0
+        kept_count = 0
+        
+        # Always keep recent items
+        for item in items_to_keep:
+            logger.info(f"✅ KEEPING (recent): {item['name']} "
+                       f"(age: {item['age_hours']:.1f}h, size: {self.format_size(item['size'])})")
+            kept_count += 1
+        
+        # Check older items
+        for item in items_to_check:
+            if self.should_delete(item['path'], item['age_seconds']):
+                try:
+                    if item['is_dir']:
+                        shutil.rmtree(item['path'])
+                        logger.info(f"🗑️  DELETED: {item['name']} "
+                                   f"(age: {item['age_hours']:.1f}h, size: {self.format_size(item['size'])})")
+                    else:
+                        os.remove(item['path'])
+                        logger.info(f"🗑️  DELETED: {item['name']} "
+                                   f"(age: {item['age_hours']:.1f}h, size: {self.format_size(item['size'])})")
+                    
+                    deleted_count += 1
+                    deleted_size += item['size']
+                except Exception as e:
+                    logger.error(f"❌ ERROR deleting {item['name']}: {str(e)}")
+            else:
+                logger.info(f"✅ KEEPING: {item['name']} "
+                           f"(age: {item['age_hours']:.1f}h, size: {self.format_size(item['size'])})")
+                kept_count += 1
+        
+        logger.info(f"\n📊 Summary for {directory}:")
+        logger.info(f"   - Deleted: {deleted_count} items ({self.format_size(deleted_size)})")
+        logger.info(f"   - Kept: {kept_count} items")
+    
+    def get_size(self, path):
+        """Get size of file or directory in bytes"""
+        if os.path.isfile(path):
+            return os.path.getsize(path)
+        elif os.path.isdir(path):
+            total = 0
+            try:
+                for dirpath, dirnames, filenames in os.walk(path):
+                    for filename in filenames:
+                        filepath = os.path.join(dirpath, filename)
+                        try:
+                            total += os.path.getsize(filepath)
+                        except:
+                            pass
+            except:
+                pass
+            return total
+        return 0
+    
+    def format_size(self, size_bytes):
+        """Format size in human-readable format"""
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size_bytes < 1024.0:
+                return f"{size_bytes:.1f} {unit}"
+            size_bytes /= 1024.0
+        return f"{size_bytes:.1f} TB"
+    
+    def run_cleanup(self):
+        """Run cleanup on all configured directories"""
+        logger.info("\n" + "="*60)
+        logger.info("🧹 STARTING AUTOMATED CLEANUP")
+        logger.info("="*60)
+        logger.info(f"Configuration:")
+        logger.info(f"  - Max age: {self.max_age_hours} hours")
+        logger.info(f"  - Keep recent: {self.keep_recent} items")
+        logger.info(f"  - Cutoff time: {datetime.fromtimestamp(self.cutoff_time).strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        total_deleted = 0
+        total_kept = 0
+        
+        for directory in self.temp_dirs:
+            self.cleanup_directory(directory)
+        
+        logger.info("\n" + "="*60)
+        logger.info("✅ CLEANUP COMPLETED")
+        logger.info("="*60)
+    
+    def get_storage_stats(self):
+        """Get storage statistics for all temp directories"""
+        stats = {}
+        
+        for directory in self.temp_dirs:
+            if not os.path.exists(directory):
+                stats[directory] = {
+                    'exists': False,
+                    'total_size': 0,
+                    'item_count': 0
+                }
+                continue
+            
+            total_size = 0
+            item_count = 0
+            
+            for item_name in os.listdir(directory):
+                item_path = os.path.join(directory, item_name)
+                total_size += self.get_size(item_path)
+                item_count += 1
+            
+            stats[directory] = {
+                'exists': True,
+                'total_size': total_size,
+                'total_size_formatted': self.format_size(total_size),
+                'item_count': item_count
+            }
+        
+        return stats
+    
+    def print_storage_stats(self):
+        """Print storage statistics"""
+        logger.info("\n" + "="*60)
+        logger.info("📊 STORAGE STATISTICS")
+        logger.info("="*60)
+        
+        stats = self.get_storage_stats()
+        total_size = 0
+        total_items = 0
+        
+        for directory, info in stats.items():
+            if info['exists']:
+                logger.info(f"\n📁 {directory}/")
+                logger.info(f"   - Items: {info['item_count']}")
+                logger.info(f"   - Size: {info['total_size_formatted']}")
+                total_size += info['total_size']
+                total_items += info['item_count']
+            else:
+                logger.info(f"\n📁 {directory}/ (does not exist)")
+        
+        logger.info(f"\n{'='*60}")
+        logger.info(f"TOTAL: {total_items} items, {self.format_size(total_size)}")
+        logger.info(f"{'='*60}")
+
+
+def main():
+    """Main function"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Clean up temporary files')
+    parser.add_argument('--max-age', type=int, default=24,
+                       help='Delete files older than this many hours (default: 24)')
+    parser.add_argument('--keep-recent', type=int, default=5,
+                       help='Always keep this many most recent files (default: 5)')
+    parser.add_argument('--stats-only', action='store_true',
+                       help='Only show statistics, do not delete anything')
+    parser.add_argument('--aggressive', action='store_true',
+                       help='Aggressive mode: max-age=1 hour, keep-recent=2')
+    
+    args = parser.parse_args()
+    
+    # Aggressive mode
+    if args.aggressive:
+        max_age = 1
+        keep_recent = 2
+        logger.info("⚠️  AGGRESSIVE MODE ENABLED")
+    else:
+        max_age = args.max_age
+        keep_recent = args.keep_recent
+    
+    # Create cleanup manager
+    cleanup = TempFileCleanup(max_age_hours=max_age, keep_recent=keep_recent)
+    
+    # Show stats before
+    logger.info("\n📊 BEFORE CLEANUP:")
+    cleanup.print_storage_stats()
+    
+    if args.stats_only:
+        logger.info("\n✅ Stats-only mode. No files deleted.")
         return
     
-    current_time = time.time()
-    max_age_seconds = max_age_hours * 3600
-    cleaned_count = 0
-    total_size = 0
+    # Run cleanup
+    cleanup.run_cleanup()
     
-    print(f"🧹 Cleaning up temp files older than {max_age_hours} hour(s)...")
-    
-    for item in os.listdir(temp_path):
-        item_path = os.path.join(temp_path, item)
-        
-        if os.path.isdir(item_path):
-            item_age = current_time - os.path.getmtime(item_path)
-            item_size = get_folder_size(item_path)
-            
-            if item_age > max_age_seconds:
-                print(f"  Removing: {item} (age: {item_age/3600:.1f}h, size: {item_size/1024/1024:.2f}MB)")
-                shutil.rmtree(item_path)
-                cleaned_count += 1
-                total_size += item_size
-    
-    if cleaned_count > 0:
-        print(f"\n✅ Cleaned up {cleaned_count} folder(s)")
-        print(f"💾 Freed {total_size/1024/1024:.2f}MB of storage")
-    else:
-        print(f"✅ No old temp files to clean up")
+    # Show stats after
+    logger.info("\n📊 AFTER CLEANUP:")
+    cleanup.print_storage_stats()
 
-def cleanup_generated_portfolios(max_age_days=7):
-    """Clean up old generated portfolio ZIP files"""
-    gen_path = "generated_portfolios"
-    
-    if not os.path.exists(gen_path):
-        print(f"✅ No generated_portfolios folder found")
-        return
-    
-    current_time = time.time()
-    max_age_seconds = max_age_days * 24 * 3600
-    cleaned_count = 0
-    total_size = 0
-    
-    print(f"\n🧹 Cleaning up generated portfolios older than {max_age_days} day(s)...")
-    
-    for item in os.listdir(gen_path):
-        item_path = os.path.join(gen_path, item)
-        
-        if os.path.isfile(item_path) and item.endswith('.zip'):
-            item_age = current_time - os.path.getmtime(item_path)
-            item_size = os.path.getsize(item_path)
-            
-            if item_age > max_age_seconds:
-                print(f"  Removing: {item} (age: {item_age/86400:.1f}d, size: {item_size/1024/1024:.2f}MB)")
-                os.remove(item_path)
-                cleaned_count += 1
-                total_size += item_size
-    
-    if cleaned_count > 0:
-        print(f"\n✅ Cleaned up {cleaned_count} ZIP file(s)")
-        print(f"💾 Freed {total_size/1024/1024:.2f}MB of storage")
-    else:
-        print(f"✅ No old ZIP files to clean up")
 
-def cleanup_uploads(max_age_days=30):
-    """Clean up old uploaded files"""
-    uploads_path = "uploads"
-    
-    if not os.path.exists(uploads_path):
-        print(f"✅ No uploads folder found")
-        return
-    
-    current_time = time.time()
-    max_age_seconds = max_age_days * 24 * 3600
-    cleaned_count = 0
-    total_size = 0
-    
-    print(f"\n🧹 Cleaning up uploads older than {max_age_days} day(s)...")
-    
-    for item in os.listdir(uploads_path):
-        item_path = os.path.join(uploads_path, item)
-        
-        if os.path.isfile(item_path):
-            item_age = current_time - os.path.getmtime(item_path)
-            item_size = os.path.getsize(item_path)
-            
-            if item_age > max_age_seconds:
-                print(f"  Removing: {item} (age: {item_age/86400:.1f}d, size: {item_size/1024/1024:.2f}MB)")
-                os.remove(item_path)
-                cleaned_count += 1
-                total_size += item_size
-    
-    if cleaned_count > 0:
-        print(f"\n✅ Cleaned up {cleaned_count} upload(s)")
-        print(f"💾 Freed {total_size/1024/1024:.2f}MB of storage")
-    else:
-        print(f"✅ No old uploads to clean up")
-
-def get_folder_size(folder_path):
-    """Calculate total size of a folder"""
-    total_size = 0
-    for dirpath, dirnames, filenames in os.walk(folder_path):
-        for filename in filenames:
-            filepath = os.path.join(dirpath, filename)
-            if os.path.exists(filepath):
-                total_size += os.path.getsize(filepath)
-    return total_size
-
-def get_storage_stats():
-    """Get current storage statistics"""
-    print("\n📊 Current Storage Statistics:")
-    print("=" * 50)
-    
-    folders = {
-        'temp_portfolios': 'temp_portfolios',
-        'generated_portfolios': 'generated_portfolios',
-        'uploads': 'uploads',
-        'analysis_reports': 'analysis_reports'
-    }
-    
-    total_size = 0
-    
-    for name, path in folders.items():
-        if os.path.exists(path):
-            size = get_folder_size(path)
-            count = len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f)) or os.path.isdir(os.path.join(path, f))])
-            total_size += size
-            print(f"  {name:25} {size/1024/1024:8.2f}MB ({count} items)")
-        else:
-            print(f"  {name:25} {'N/A':>8} (not found)")
-    
-    print("=" * 50)
-    print(f"  {'TOTAL':25} {total_size/1024/1024:8.2f}MB")
-    print()
-
-if __name__ == "__main__":
-    print("=" * 50)
-    print("🧹 Smart Resume AI - Storage Cleanup")
-    print("=" * 50)
-    print()
-    
-    # Show current stats
-    get_storage_stats()
-    
-    # Clean up temp portfolios (older than 1 hour)
-    cleanup_temp_portfolios(max_age_hours=1)
-    
-    # Clean up generated portfolios (older than 7 days)
-    cleanup_generated_portfolios(max_age_days=7)
-    
-    # Clean up uploads (older than 30 days)
-    cleanup_uploads(max_age_days=30)
-    
-    # Show final stats
-    print("\n" + "=" * 50)
-    print("After Cleanup:")
-    get_storage_stats()
-    
-    print("=" * 50)
-    print("✅ Cleanup complete!")
-    print("=" * 50)
+if __name__ == '__main__':
+    main()

@@ -121,7 +121,7 @@ Top users: 1 users
 ## How to Use
 
 ### For Admins
-1. Login as admin (sam@gmail.com / sanjay2026)
+1. Login as admin (admin@example.com / sanjay2026)
 2. Navigate to "📊 DASHBOARD" from sidebar
 3. View overview metrics at top
 4. Scroll down to see 4 admin tabs

@@ -76,7 +76,7 @@
 │  [👤 Profile] [🚪 Logout]   │
 │                             │
 │  ─────────────────────────  │
-│  ✅ 👑 Admin: sam@gmail.com │  ← Admin status
+│  ✅ 👑 Admin: admin@example.com │  ← Admin status
 │                             │
 │  [📊 ADMIN DASHBOARD] 🔵    │  ← NEW! Only for admins
 │  [🚪 Admin Logout]          │
@@ -133,7 +133,7 @@ Scroll to bottom of sidebar:
 │  🔐 Admin Login ▼           │
 │  ┌─────────────────────┐   │
 │  │ Email:              │   │
-│  │ sam@gmail.com       │   │
+│  │ admin@example.com       │   │
 │  │                     │   │
 │  │ Password:           │   │
 │  │ ••••••••••••        │   │
@@ -148,7 +148,7 @@ Scroll to bottom of sidebar:
 ┌─────────────────────────────────┐
 │  ✅ Admin logged in successfully!│
 │                                 │
-│  ✅ 👑 Admin: sam@gmail.com     │
+│  ✅ 👑 Admin: admin@example.com     │
 │                                 │
 │  [📊 ADMIN DASHBOARD] 🔵        │  ← NEW BUTTON!
 │  [🚪 Admin Logout]              │
@@ -347,7 +347,7 @@ After admin logout or session timeout:
 
 ### Admin Credentials
 ```
-Email: sam@gmail.com
+Email: admin@example.com
 Password: sanjay2026
 ```
 

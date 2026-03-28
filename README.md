@@ -60,7 +60,7 @@ A comprehensive AI-powered resume analysis and portfolio generation platform wit
    
    Create a `.env` file:
    ```env
-   DATABASE_URL=postgresql://user:pass@host/db
+   DATABASE_URL=postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require
    GOOGLE_API_KEY=your_google_api_key
    NETLIFY_TOKEN=your_netlify_token
    ```
@@ -123,7 +123,7 @@ smart-resume-ai/
 ## 🔐 Default Admin Credentials
 
 ```
-Email: sam@gmail.com
+Email: admin@example.com
 Password: sanjay99
 ```
 

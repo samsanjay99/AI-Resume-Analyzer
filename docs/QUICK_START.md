@@ -28,7 +28,7 @@ Create a `.env` file in the root directory:
 
 ```env
 # Database (Required)
-DATABASE_URL=postgresql://user:password@host:5432/database
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require
 
 # AI Services (Required)
 GOOGLE_API_KEY=your_google_gemini_api_key
@@ -64,7 +64,7 @@ The app will open in your browser at `http://localhost:8501`
 ## Default Login
 
 **Admin Account:**
-- Email: `sam@gmail.com`
+- Email: `admin@example.com`
 - Password: `sanjay99`
 
 **⚠️ Important:** Change these credentials after first login!

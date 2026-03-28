@@ -62,7 +62,7 @@ self.pages = {
 **Admin Logged In State**:
 ```
 ┌─────────────────────────────────┐
-│  ✅ 👑 Admin: sam@gmail.com     │
+│  ✅ 👑 Admin: admin@example.com     │
 │                                 │
 │  [📊 ADMIN DASHBOARD] (primary) │  ← New button
 │  [🚪 Admin Logout]              │
@@ -120,7 +120,7 @@ if current_page == 'admin_dashboard':
 2. **Scroll to bottom** of sidebar
 3. **Expand** "🔐 Admin Login" section
 4. **Enter credentials**:
-   - Email: sam@gmail.com
+   - Email: admin@example.com
    - Password: sanjay2026
 5. **Click Login** button
 6. **See confirmation**: "✅ Admin logged in successfully!"
@@ -195,7 +195,7 @@ All 4 tests passed successfully:
 ## Admin Credentials
 
 ```
-Email: sam@gmail.com
+Email: admin@example.com
 Password: sanjay2026
 ```
 
@@ -281,7 +281,7 @@ Total: 4/4 tests passed
 - Check app.py - dashboard should NOT be in self.pages
 
 ### Admin login not working
-- Verify credentials: sam@gmail.com / sanjay2026
+- Verify credentials: admin@example.com / sanjay2026
 - Check database connection
 - Review admin_logs table for errors
 

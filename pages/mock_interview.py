@@ -392,13 +392,13 @@ def render_live():
     # User clicks this button after completing the interview
     # ══════════════════════════════════════════════════════════════
     st.info(
-        "⏳ **Complete the interview above.** When done, click the button below — "
-        "or wait a few seconds and it will auto-detect."
+        "⏳ **Complete the interview above.** When done, switch back here and click the button below."
     )
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("🔄 Check for Results", use_container_width=True, key=f"poll_{iv_id}"):
+        if st.button("✅ Check My Result", type="primary", use_container_width=True, key=f"poll_{iv_id}"):
+            # 1. Local dev: check file written by mini HTTP server
             if os.path.exists(result_file):
                 try:
                     with open(result_file, "r", encoding="utf-8") as _f:
@@ -411,7 +411,14 @@ def render_live():
                 except Exception as e:
                     st.error(f"Error reading results: {e}")
             else:
-                st.warning("No results yet — complete the interview first.")
+                # 2. Cloud: check DB for transcript saved by Vercel API
+                pending = InterviewManager.get_pending_transcript(iv_id)
+                if pending:
+                    st.session_state.iv_transcript = pending
+                    st.session_state.iv_phase = "evaluating"
+                    st.rerun()
+                else:
+                    st.warning("No results found yet. Complete the interview first, then come back and click this button.")
 
     # ══════════════════════════════════════════════════════════════
     # MANUAL TEXT FALLBACK (last resort)

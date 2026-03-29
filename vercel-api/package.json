@@ -1,0 +1,8 @@
+{
+  "name": "ai-interview-api",
+  "version": "1.0.0",
+  "description": "Serverless API for AI Mock Interview transcript submission",
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.0"
+  }
+}

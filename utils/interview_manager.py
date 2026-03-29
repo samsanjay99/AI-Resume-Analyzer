@@ -63,7 +63,7 @@ class InterviewManager:
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS interview_feedback (
                         id SERIAL PRIMARY KEY,
-                        interview_id INTEGER REFERENCES mock_interviews(id) ON DELETE CASCADE,
+                        interview_id INTEGER REFERENCES mock_interviews(id) ON DELETE CASCADE UNIQUE,
                         user_id INTEGER,
                         transcript JSONB,
                         total_score INTEGER DEFAULT 0,
@@ -496,7 +496,61 @@ Return ONLY valid JSON, no markdown:
             return None
 
     @staticmethod
-    def save_feedback(interview_id, user_id, transcript, feedback, pdf_path=None):
+    def save_transcript(interview_id: int, transcript: list) -> bool:
+        """Save transcript to DB when interview completes on GitHub Pages.
+        Streamlit polls for this and runs evaluation when found."""
+        try:
+            with get_database_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE mock_interviews
+                    SET status = 'transcript_ready',
+                        questions = COALESCE(questions, questions)
+                    WHERE id = %s
+                """, (interview_id,))
+                # Store transcript in a temp column or reuse interview_feedback with partial data
+                cursor.execute("""
+                    INSERT INTO interview_feedback
+                    (interview_id, transcript, total_score, created_at)
+                    VALUES (%s, %s, 0, NOW())
+                    ON CONFLICT DO NOTHING
+                """, (interview_id, json.dumps(transcript)))
+                conn.commit()
+                return True
+        except Exception as e:
+            # Fallback: just update status
+            try:
+                with get_database_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "UPDATE mock_interviews SET status='transcript_ready' WHERE id=%s",
+                        (interview_id,)
+                    )
+                    conn.commit()
+            except Exception:
+                pass
+            print(f"save_transcript error: {e}")
+            return False
+
+    @staticmethod
+    def get_pending_transcript(interview_id: int):
+        """Get transcript saved by save_transcript, if evaluation not yet done."""
+        try:
+            with get_database_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT transcript FROM interview_feedback
+                    WHERE interview_id = %s AND total_score = 0
+                    ORDER BY created_at DESC LIMIT 1
+                """, (interview_id,))
+                row = cursor.fetchone()
+                if row and row[0]:
+                    t = row[0]
+                    return t if isinstance(t, list) else json.loads(t)
+                return None
+        except Exception as e:
+            print(f"get_pending_transcript error: {e}")
+            return None
         try:
             cats = feedback.get("category_scores", {})
             with get_database_connection() as conn:

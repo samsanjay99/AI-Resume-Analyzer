@@ -1,4 +1,0 @@
-# Requirements for Cleanup System
-# Install with: pip install -r cleanup_requirements.txt
-
-schedule>=1.1.0

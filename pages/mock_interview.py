@@ -330,7 +330,7 @@ def render_live():
         from urllib.parse import quote
         qs_b64 = base64.b64encode(json.dumps(questions).encode()).decode()
         interview_url = (
-            "https://ai-resume-analyzer-ten-silk.vercel.app/interview.html"
+            "https://ai-resume-analyzer-olive-eta.vercel.app/interview.html"
             f"?vt={quote(os.getenv('VAPI_WEB_TOKEN', ''))}"
             f"&ai={quote(os.getenv('VAPI_ASSISTANT_ID', 'ab9b228d-3b3f-4ff0-9678-a6de2c20674c'))}"
             f"&iv={iv_id}"

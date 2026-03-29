@@ -323,21 +323,20 @@ def render_live():
         f.write(html)
 
     if is_cloud:
-        # On Streamlit Cloud: embed directly via components.html()
-        # Cloud iframes have a real HTTPS origin (not about:srcdoc like local)
-        # so VAPI works correctly inside the iframe.
-        # Use full-screen height to give the interview page proper space.
-        st.markdown("---")
-        components.html(html, height=900, scrolling=True)
-        interview_url = None  # not needed — embedded directly
+        # On Streamlit Cloud: open /app/static/ in new tab
+        # The "Page not found" popup was a Streamlit routing issue —
+        # it happens because Streamlit intercepts the navigation.
+        # Fix: use window.open() from JS instead of st.link_button()
+        # so the browser opens it directly without Streamlit's router.
+        interview_url = f"{streamlit_base_url}/app/static/{filename}"
     else:
         from utils.interview_server import ensure_interview_server
         server_base = ensure_interview_server(static_dir)
         if server_base:
             interview_url = f"{server_base}/{filename}"
         else:
-            # Server failed to bind — embed as fallback
-            interview_url = None
+            interview_url = f"{streamlit_base_url}/app/static/{filename}"
+    _iframe_src = None
 
     # ══════════════════════════════════════════════════════════════
     # INFO BANNER + INTERVIEW UI
@@ -356,21 +355,25 @@ def render_live():
     """, unsafe_allow_html=True)
 
     if interview_url:
-        # Local: open in new tab via link button
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            st.link_button(
-                "🎙️ Open Interview",
-                interview_url,
-                type="primary",
-                use_container_width=True,
-            )
+            # Use JS window.open() to bypass Streamlit's router interception
+            components.html(f"""
+            <div style="display:flex;justify-content:center;padding:4px 0;">
+            <button onclick="window.open('{interview_url}','_blank','noopener')"
+            style="padding:12px 32px;border-radius:50px;border:none;
+            font-size:1rem;font-weight:700;cursor:pointer;color:white;
+            background:linear-gradient(135deg,#4CAF50,#388E3C);
+            box-shadow:0 4px 18px rgba(76,175,80,.38);
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+            width:100%;">🎙️ Open Interview</button>
+            </div>
+            """, height=60)
         st.caption(
             "Chrome or Edge required · Allow microphone when prompted · "
             "Complete the interview, then click 'Check for Results' below."
         )
     else:
-        # Cloud: already embedded above via components.html()
         st.caption("Chrome or Edge required · Allow microphone when prompted · Complete all questions, then click 'Check for Results' below.")
 
     st.markdown("---")

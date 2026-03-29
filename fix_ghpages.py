@@ -21,7 +21,7 @@ async function submitInterview() {
     '<b style="color:#aaa">Saving your answers...</b>';
 
   try {
-    const response = await fetch('https://ai-resume-analyzer-ten-silk.vercel.app/api/submit', {
+    const response = await fetch('/api/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ interview_id: IV_ID, messages: S.messages })

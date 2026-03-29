@@ -1,0 +1,96 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# Environment Variables — NEVER commit these
+.env
+.env.local
+.env.*.local
+utils/.env
+test-vapi/.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Uploads and Generated Files
+uploads/
+generated_portfolios/
+temp_portfolios/
+analysis_reports/
+interview_reports/
+*.pdf
+*.docx
+*.zip
+
+# Keep folder structure but ignore contents
+uploads/*
+!uploads/.gitkeep
+generated_portfolios/*
+!generated_portfolios/.gitkeep
+temp_portfolios/*
+!temp_portfolios/.gitkeep
+analysis_reports/*
+!analysis_reports/.gitkeep
+interview_reports/*
+!interview_reports/.gitkeep
+
+# Interview result temp files (written by mini HTTP server, read by Streamlit)
+static/iv_result_*.json
+static/interview_*.html
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Temporary Files
+*.tmp
+*.temp
+.cache/
+
+# Backup Files
+*.backup
+*.bak
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Keep empty directories
+!.gitkeep

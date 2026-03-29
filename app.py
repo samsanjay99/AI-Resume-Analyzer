@@ -4913,6 +4913,43 @@ class ResumeApp:
         # ============================================
         
         self.apply_global_styles()
+
+        # ── Handle interview completion (cloud mode) ──────────────────────
+        # On cloud, the interview page navigates window.opener to
+        # /?iv_done=ID&iv_data=TRANSCRIPT. If session state is intact
+        # (opener tab), render_live() catches it. If session was lost,
+        # we restore minimal state here so evaluation still runs.
+        _params = st.query_params
+        if "iv_done" in _params and "iv_data" in _params:
+            import json as _json
+            try:
+                _iv_id = int(_params["iv_done"])
+                _transcript = _json.loads(_params["iv_data"])
+                if _transcript:
+                    # Restore session state if missing (fresh session after redirect)
+                    if st.session_state.get("iv_id") != _iv_id:
+                        from utils.interview_manager import InterviewManager
+                        _iv_data = InterviewManager.get_interview_by_id(_iv_id)
+                        if _iv_data:
+                            st.session_state.iv_id     = _iv_id
+                            st.session_state.iv_q      = _iv_data.get("questions", [])
+                            st.session_state.iv_exp    = _iv_data.get("expected_answers", [])
+                            st.session_state.iv_skills = _iv_data.get("skills_to_test", [])
+                            st.session_state.iv_cfg    = {
+                                "job_role":       _iv_data.get("job_role", "Unknown"),
+                                "difficulty":     _iv_data.get("difficulty", "medium"),
+                                "interview_type": _iv_data.get("interview_type", "mixed"),
+                                "question_count": _iv_data.get("question_count", 5),
+                            }
+                    st.session_state.iv_transcript = _transcript
+                    st.session_state.iv_phase      = "evaluating"
+                    st.session_state.page          = "mock_interview"
+                    st.query_params.clear()
+                    st.rerun()
+            except Exception as _e:
+                print(f"iv_done intercept error: {_e}")
+                st.query_params.clear()
+        # ─────────────────────────────────────────────────────────────────
         
         # Admin login/logout in sidebar
         with st.sidebar:

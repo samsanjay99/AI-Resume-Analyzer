@@ -31,10 +31,12 @@ def build_standalone_html(
     vapi_token: str,
     vapi_assistant_id: str,
     streamlit_base_url: str = "",
+    submit_url: str = "",
 ) -> str:
     """
     Returns a complete standalone HTML string.
-    Normal Python strings (single braces) — not f-string with escaped JS braces.
+    submit_url: where to POST results (local: http://127.0.0.1:8765/submit,
+                                       cloud: uses query-param redirect instead)
     """
     total_q       = len(questions)
     questions_js  = json.dumps(questions)
@@ -43,6 +45,8 @@ def build_standalone_html(
 
     # Base URL for returning results to Streamlit after interview completes
     return_url_base = streamlit_base_url.rstrip("/") if streamlit_base_url else "http://localhost:8501"
+    # Submit endpoint — empty string means use query-param redirect (cloud mode)
+    submit_endpoint = submit_url if submit_url else ""
 
     # Escape for safe embedding in JS string literals
     cname_js   = candidate_name.replace("'", "\\'").replace('"', '\\"')
@@ -458,9 +462,11 @@ function stopSilBar() {{
 // SEND RESULTS BACK TO STREAMLIT
 // ═══════════════════════════════════════════════════════
 // SEND RESULTS BACK TO STREAMLIT
-// POSTs transcript to the mini HTTP server → writes iv_result_ID.json
-// Streamlit polls for that file → no URL navigation → no session loss
+// Local:  POST to /submit → server writes file → Streamlit polls
+// Cloud:  navigate to Streamlit with ?iv_done=ID&iv_data=... (query param)
 // ═══════════════════════════════════════════════════════
+const SUBMIT_URL = '{submit_endpoint}';
+
 async function sendResults() {{
   const userMsgs = S.messages.filter(m => m.role === 'user');
 
@@ -474,33 +480,49 @@ async function sendResults() {{
   document.getElementById('done-msg').innerHTML =
     '<b style="color:#4CAF50">'+userMsgs.length+' answer'+
     (userMsgs.length!==1?'s':'')+' captured!</b><br>'+
-    '<span style="color:#aaa;font-size:.76rem">Sending to Streamlit for evaluation…</span>';
+    '<span style="color:#aaa;font-size:.76rem">Sending results…</span>';
 
-  const payload = {{ interview_id: IV_ID, messages: S.messages }};
+  const msgsJson = JSON.stringify(S.messages);
+  const encoded  = encodeURIComponent(msgsJson);
+  const returnUrl = STREAMLIT_BASE + '/?iv_done=' + IV_ID + '&iv_data=' + encoded;
 
-  try {{
-    // POST to the mini server's /submit endpoint (same origin: 127.0.0.1:8765)
-    const res = await fetch('/submit', {{
-      method: 'POST',
-      headers: {{ 'Content-Type': 'application/json' }},
-      body: JSON.stringify(payload)
-    }});
-    if (res.ok) {{
-      document.getElementById('done-msg').innerHTML =
-        '<b style="color:#4CAF50">✅ Results sent!</b><br>'+
-        '<span style="color:#aaa;font-size:.76rem">Switch back to the Streamlit tab — your report is loading…</span>';
-      console.log('[Interview] Results POSTed successfully');
-    }} else {{
-      throw new Error('Server returned ' + res.status);
+  if (SUBMIT_URL) {{
+    // ── LOCAL MODE: POST to mini HTTP server ──────────────────────
+    try {{
+      const res = await fetch(SUBMIT_URL, {{
+        method: 'POST',
+        headers: {{ 'Content-Type': 'application/json' }},
+        body: JSON.stringify({{ interview_id: IV_ID, messages: S.messages }})
+      }});
+      if (res.ok) {{
+        document.getElementById('done-msg').innerHTML =
+          '<b style="color:#4CAF50">✅ Results sent!</b><br>'+
+          '<span style="color:#aaa;font-size:.76rem">Switch back to the Streamlit tab and click "Check for Results".</span>';
+        return;
+      }}
+    }} catch(e) {{
+      console.warn('[Interview] POST failed, falling back to redirect:', e);
     }}
-  }} catch(e) {{
-    // Fallback: write to localStorage so user can manually retrieve
-    console.warn('[Interview] POST failed, using localStorage fallback:', e);
-    try {{ localStorage.setItem('iv_result_' + IV_ID, JSON.stringify(S.messages)); }} catch(_) {{}}
-    document.getElementById('done-msg').innerHTML =
-      '<b style="color:#FF9800">⚠️ Auto-send failed.</b><br>'+
-      '<span style="color:#aaa;font-size:.75rem">Switch to the Streamlit tab and click "Get My Results".</span>';
   }}
+
+  // ── CLOUD MODE (or POST fallback): navigate to Streamlit ──────
+  document.getElementById('done-msg').innerHTML =
+    '<b style="color:#4CAF50">'+userMsgs.length+' answers captured!</b><br>'+
+    '<span style="color:#aaa;font-size:.76rem">Taking you to your results now…</span>';
+
+  try {{ localStorage.setItem('iv_result_' + IV_ID, msgsJson); }} catch(e) {{}}
+
+  setTimeout(() => {{
+    try {{
+      if (window.opener && !window.opener.closed) {{
+        window.opener.location.href = returnUrl;
+      }} else {{
+        window.location.href = returnUrl;
+      }}
+    }} catch(e) {{
+      window.location.href = returnUrl;
+    }}
+  }}, 1500);
 }}
 
 // ═══════════════════════════════════════════════════════

@@ -257,22 +257,36 @@ def render_live():
             st.query_params.clear()
 
     # ══════════════════════════════════════════════════════════════
-    # GENERATE HTML FILE - Save to static folder, serve via mini HTTP server
-    # Streamlit's static server sends .html as text/plain (broken).
-    # We spin up a tiny HTTP server on port 8765 that sends text/html correctly.
+    # GENERATE HTML FILE
+    # Local dev:  mini HTTP server on port 8765 (correct MIME type)
+    # Cloud:      Streamlit's /app/static/ path (cloud serves HTML correctly)
     # ══════════════════════════════════════════════════════════════
-    from utils.interview_server import ensure_interview_server
     from utils.interview_standalone import build_standalone_html
 
-    # Determine Streamlit base URL for the return redirect after interview
+    # Detect environment
     try:
         host = st.context.headers.get("Host", "localhost:8501")
         scheme = "https" if ("streamlit.app" in host or "share.streamlit.io" in host) else "http"
         streamlit_base_url = f"{scheme}://{host}"
+        is_cloud = "streamlit.app" in host or "share.streamlit.io" in host
     except Exception:
         streamlit_base_url = "http://localhost:8501"
+        is_cloud = False
 
-    # Generate HTML with correct return URL baked in
+    # Generate HTML with correct return URL and submit endpoint baked in
+    if is_cloud:
+        submit_url = ""  # cloud uses query-param redirect
+    else:
+        from utils.interview_server import ensure_interview_server
+        server_base = ensure_interview_server(static_dir if 'static_dir' in dir() else os.path.join(os.path.dirname(os.path.dirname(__file__)), "static"))
+        submit_url = f"{server_base}/submit"
+
+    # Save to static folder
+    static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+    os.makedirs(static_dir, exist_ok=True)
+    filename = f"interview_{iv_id}.html"
+    filepath = os.path.join(static_dir, filename)
+
     html = build_standalone_html(
         questions          = questions,
         job_role           = cfg["job_role"],
@@ -282,20 +296,18 @@ def render_live():
         vapi_assistant_id  = os.getenv("VAPI_ASSISTANT_ID",
                                        "ab9b228d-3b3f-4ff0-9678-a6de2c20674c"),
         streamlit_base_url = streamlit_base_url,
+        submit_url         = submit_url,
     )
-
-    # Save to static folder
-    static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
-    os.makedirs(static_dir, exist_ok=True)
-    filename = f"interview_{iv_id}.html"
-    filepath = os.path.join(static_dir, filename)
 
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(html)
 
-    # Start mini HTTP server (serves static/ with correct MIME types)
-    server_base = ensure_interview_server(static_dir)
-    interview_url = f"{server_base}/{filename}"
+    if is_cloud:
+        interview_url = f"{streamlit_base_url}/app/static/{filename}"
+    else:
+        from utils.interview_server import ensure_interview_server
+        server_base = ensure_interview_server(static_dir)
+        interview_url = f"{server_base}/{filename}"
 
     # ══════════════════════════════════════════════════════════════
     # INFO BANNER

@@ -323,20 +323,29 @@ def render_live():
         f.write(html)
 
     if is_cloud:
-        # On Streamlit Cloud: open /app/static/ in new tab
-        # The "Page not found" popup was a Streamlit routing issue —
-        # it happens because Streamlit intercepts the navigation.
-        # Fix: use window.open() from JS instead of st.link_button()
-        # so the browser opens it directly without Streamlit's router.
-        interview_url = f"{streamlit_base_url}/app/static/{filename}"
+        # On Streamlit Cloud: use GitHub Pages to host the interview HTML.
+        # GitHub Pages serves with correct MIME types + real HTTPS origin → VAPI works.
+        # URL: https://samsanjay99.github.io/AI-Resume-Analyzer/interview.html?params...
+        import base64
+        from urllib.parse import quote
+        qs_b64 = base64.b64encode(json.dumps(questions).encode()).decode()
+        interview_url = (
+            "https://samsanjay99.github.io/AI-Resume-Analyzer/interview.html"
+            f"?vt={quote(os.getenv('VAPI_WEB_TOKEN', ''))}"
+            f"&ai={quote(os.getenv('VAPI_ASSISTANT_ID', 'ab9b228d-3b3f-4ff0-9678-a6de2c20674c'))}"
+            f"&iv={iv_id}"
+            f"&cn={quote(name)}"
+            f"&jr={quote(cfg['job_role'])}"
+            f"&qs={qs_b64}"
+            f"&sb={quote(streamlit_base_url)}"
+        )
     else:
         from utils.interview_server import ensure_interview_server
         server_base = ensure_interview_server(static_dir)
         if server_base:
             interview_url = f"{server_base}/{filename}"
         else:
-            interview_url = f"{streamlit_base_url}/app/static/{filename}"
-    _iframe_src = None
+            interview_url = None
 
     # ══════════════════════════════════════════════════════════════
     # INFO BANNER + INTERVIEW UI

@@ -515,7 +515,11 @@ async function sendResults() {{
   setTimeout(() => {{
     try {{
       if (window.opener && !window.opener.closed) {{
+        // Opened in new tab (local mode)
         window.opener.location.href = returnUrl;
+      }} else if (window.parent && window.parent !== window) {{
+        // Embedded in iframe (cloud mode)
+        window.parent.location.href = returnUrl;
       }} else {{
         window.location.href = returnUrl;
       }}

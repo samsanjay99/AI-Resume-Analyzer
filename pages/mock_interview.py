@@ -323,18 +323,24 @@ def render_live():
         f.write(html)
 
     if is_cloud:
-        interview_url = f"{streamlit_base_url}/app/static/{filename}"
+        # On Streamlit Cloud: embed directly via components.html()
+        # Cloud iframes have a real HTTPS origin (not about:srcdoc like local)
+        # so VAPI works correctly inside the iframe.
+        # Use full-screen height to give the interview page proper space.
+        st.markdown("---")
+        components.html(html, height=900, scrolling=True)
+        interview_url = None  # not needed — embedded directly
     else:
         from utils.interview_server import ensure_interview_server
         server_base = ensure_interview_server(static_dir)
         if server_base:
             interview_url = f"{server_base}/{filename}"
         else:
-            # Server failed to bind — fall back to cloud static serving
-            interview_url = f"{streamlit_base_url}/app/static/{filename}"
+            # Server failed to bind — embed as fallback
+            interview_url = None
 
     # ══════════════════════════════════════════════════════════════
-    # INFO BANNER
+    # INFO BANNER + INTERVIEW UI
     # ══════════════════════════════════════════════════════════════
     st.markdown(f"""
     <div style='background:linear-gradient(135deg,#1a1a2e,#16213e);
@@ -346,30 +352,26 @@ def render_live():
     <b style='color:white;'>{cfg["job_role"]}</b> &nbsp;·&nbsp;
     {len(questions)} questions &nbsp;·&nbsp; VAPI Clara + Free Voice fallback
     </p>
-    <p style='color:#ccc;font-size:.82rem;margin:0;'>
-    Click the button below to open the interview in a new tab.
-    </p>
     </div>
     """, unsafe_allow_html=True)
 
-    # ══════════════════════════════════════════════════════════════
-    # OPEN INTERVIEW BUTTON
-    # Uses JS to build the correct URL from window.location.origin
-    # so it works both locally (localhost:8501) and on Streamlit Cloud
-    # ══════════════════════════════════════════════════════════════
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.link_button(
-            "🎙️ Open Interview",
-            interview_url,
-            type="primary",
-            use_container_width=True,
+    if interview_url:
+        # Local: open in new tab via link button
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.link_button(
+                "🎙️ Open Interview",
+                interview_url,
+                type="primary",
+                use_container_width=True,
+            )
+        st.caption(
+            "Chrome or Edge required · Allow microphone when prompted · "
+            "Complete the interview, then click 'Check for Results' below."
         )
-
-    st.caption(
-        "Chrome or Edge required · Allow microphone when prompted · "
-        "Complete the interview, then click 'Get My Results' below."
-    )
+    else:
+        # Cloud: already embedded above via components.html()
+        st.caption("Chrome or Edge required · Allow microphone when prompted · Complete all questions, then click 'Check for Results' below.")
 
     st.markdown("---")
     

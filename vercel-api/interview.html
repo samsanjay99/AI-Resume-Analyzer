@@ -456,38 +456,7 @@ async function sendResults() {
   await submitInterview();
 }
 
-async function submitInterview() {
-  const userMsgs = S.messages.filter(m => m.role === 'user');
-  document.getElementById('done-msg').innerHTML =
-    '<b style="color:#aaa">Saving your answers...</b>';
 
-  try {
-    const response = await fetch('/api/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ interview_id: IV_ID, messages: S.messages })
-    });
-    const result = await response.json();
-    if (result.success) {
-      document.getElementById('done-msg').innerHTML =
-        '<b style="color:#4CAF50">&#10003; Interview completed successfully!</b><br>'
-        + '<span style="color:#ccc;font-size:.9rem;line-height:2;">'
-        + userMsgs.length + ' answers saved.<br>'
-        + '<b style="color:white;">Go back to the Streamlit tab</b>'
-        + ' and click <b style="color:#4CAF50;">Check My Result</b>.'
-        + '</span>';
-    } else {
-      throw new Error(result.error || 'Unknown error');
-    }
-  } catch (error) {
-    console.error('Submit failed:', error);
-    document.getElementById('done-msg').innerHTML =
-      '<b style="color:#FF9800">&#9888; Could not auto-save.</b><br>'
-      + '<span style="color:#aaa;font-size:.8rem">'
-      + 'Go back to the Streamlit tab and use the manual fallback to enter your answers.'
-      + '</span>';
-  }
-}
 
 async function submitInterview() {
   const userMsgs = S.messages.filter(m => m.role === 'user');

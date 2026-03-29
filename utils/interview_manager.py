@@ -551,6 +551,9 @@ Return ONLY valid JSON, no markdown:
         except Exception as e:
             print(f"get_pending_transcript error: {e}")
             return None
+
+    @staticmethod
+    def save_feedback(interview_id, user_id, transcript, feedback, pdf_path=None):
         try:
             cats = feedback.get("category_scores", {})
             with get_database_connection() as conn:

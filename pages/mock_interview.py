@@ -263,17 +263,28 @@ def render_live():
     # ══════════════════════════════════════════════════════════════
     from utils.interview_standalone import build_standalone_html
 
-    # Detect environment
+    # Detect environment — use env var (most reliable) then fall back to host header
+    # Streamlit Cloud sets STREAMLIT_SHARING_MODE=true or runs without local .env
     try:
         host = st.context.headers.get("Host", "localhost:8501")
-        scheme = "https" if ("streamlit.app" in host or "share.streamlit.io" in host) else "http"
+        scheme = "https" if ("streamlit.app" in host or "share.streamlit.io" in host or "https" in host) else "http"
         streamlit_base_url = f"{scheme}://{host}"
-        is_cloud = "streamlit.app" in host or "share.streamlit.io" in host
     except Exception:
+        host = "localhost:8501"
+        scheme = "http"
         streamlit_base_url = "http://localhost:8501"
-        is_cloud = False
+
+    # is_cloud: true if NOT running locally
+    # Check multiple signals: env var, host header, absence of local .env
+    is_cloud = (
+        os.getenv("STREAMLIT_SHARING_MODE") == "true"
+        or "streamlit.app" in host
+        or "share.streamlit.io" in host
+        or not os.path.exists(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
+    )
 
     # Generate HTML with correct return URL and submit endpoint baked in
+    print(f"[Interview] host={host} is_cloud={is_cloud} streamlit_base_url={streamlit_base_url}")
     if is_cloud:
         submit_url = ""  # cloud uses query-param redirect
     else:

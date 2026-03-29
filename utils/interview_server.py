@@ -110,10 +110,15 @@ class InterviewHandler(BaseHTTPRequestHandler):
 
 
 def ensure_interview_server(directory: str | Path) -> str:
-    """Start server once, return base URL http://127.0.0.1:8765"""
+    """Start server once, return base URL http://127.0.0.1:8765
+    Returns empty string if binding fails (e.g. on Streamlit Cloud)."""
     global _SERVER, _STATIC
     if _SERVER is None:
-        _STATIC = str(Path(directory).resolve())
-        _SERVER = ThreadingHTTPServer(("127.0.0.1", _PORT), InterviewHandler)
-        threading.Thread(target=_SERVER.serve_forever, daemon=True).start()
+        try:
+            _STATIC = str(Path(directory).resolve())
+            _SERVER = ThreadingHTTPServer(("127.0.0.1", _PORT), InterviewHandler)
+            threading.Thread(target=_SERVER.serve_forever, daemon=True).start()
+        except OSError as e:
+            print(f"[InterviewServer] Cannot bind to port {_PORT}: {e} — local server disabled")
+            return ""
     return f"http://127.0.0.1:{_PORT}"

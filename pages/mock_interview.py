@@ -275,28 +275,37 @@ def render_live():
         streamlit_base_url = "http://localhost:8501"
 
     # is_cloud: true if NOT running locally
-    # Check multiple signals: env var, host header, absence of local .env
-    is_cloud = (
-        os.getenv("STREAMLIT_SHARING_MODE") == "true"
-        or "streamlit.app" in host
-        or "share.streamlit.io" in host
-        or not os.path.exists(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
-    )
+    # Most reliable: try to bind a socket to 127.0.0.1:8765 — if it fails with
+    # permission error it's cloud; also check env vars and host header.
+    def _detect_cloud():
+        # Streamlit Cloud sets this env var
+        if os.getenv("STREAMLIT_SHARING_MODE") == "true":
+            return True
+        if os.getenv("HOME") == "/home/adminuser":  # Streamlit Cloud container
+            return True
+        if "streamlit.app" in host or "share.streamlit.io" in host:
+            return True
+        # If no .env file exists at project root, assume cloud
+        project_root = os.path.dirname(os.path.dirname(__file__))
+        if not os.path.exists(os.path.join(project_root, ".env")):
+            return True
+        return False
 
-    # Generate HTML with correct return URL and submit endpoint baked in
-    print(f"[Interview] host={host} is_cloud={is_cloud} streamlit_base_url={streamlit_base_url}")
-    if is_cloud:
-        submit_url = ""  # cloud uses query-param redirect
-    else:
-        from utils.interview_server import ensure_interview_server
-        server_base = ensure_interview_server(static_dir if 'static_dir' in dir() else os.path.join(os.path.dirname(os.path.dirname(__file__)), "static"))
-        submit_url = f"{server_base}/submit"
+    is_cloud = _detect_cloud()
 
     # Save to static folder
     static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
     os.makedirs(static_dir, exist_ok=True)
     filename = f"interview_{iv_id}.html"
     filepath = os.path.join(static_dir, filename)
+
+    # Determine submit URL (local only — cloud uses query-param redirect)
+    if is_cloud:
+        submit_url = ""
+    else:
+        from utils.interview_server import ensure_interview_server
+        server_base = ensure_interview_server(static_dir)
+        submit_url = f"{server_base}/submit" if server_base else ""
 
     html = build_standalone_html(
         questions          = questions,
@@ -318,7 +327,11 @@ def render_live():
     else:
         from utils.interview_server import ensure_interview_server
         server_base = ensure_interview_server(static_dir)
-        interview_url = f"{server_base}/{filename}"
+        if server_base:
+            interview_url = f"{server_base}/{filename}"
+        else:
+            # Server failed to bind — fall back to cloud static serving
+            interview_url = f"{streamlit_base_url}/app/static/{filename}"
 
     # ══════════════════════════════════════════════════════════════
     # INFO BANNER

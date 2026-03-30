@@ -558,6 +558,7 @@ Return ONLY valid JSON, no markdown:
             cats = feedback.get("category_scores", {})
             with get_database_connection() as conn:
                 cursor = conn.cursor()
+                # Use UPSERT — Vercel API may have already inserted a row with total_score=0
                 cursor.execute("""
                     INSERT INTO interview_feedback
                     (interview_id, user_id, transcript, total_score,
@@ -567,6 +568,25 @@ Return ONLY valid JSON, no markdown:
                      skill_gaps, final_assessment, improvement_plan,
                      filler_word_count, avg_answer_length, pdf_path)
                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    ON CONFLICT (interview_id) DO UPDATE SET
+                        user_id = EXCLUDED.user_id,
+                        transcript = EXCLUDED.transcript,
+                        total_score = EXCLUDED.total_score,
+                        communication_score = EXCLUDED.communication_score,
+                        technical_score = EXCLUDED.technical_score,
+                        problem_solving_score = EXCLUDED.problem_solving_score,
+                        confidence_score = EXCLUDED.confidence_score,
+                        relevance_score = EXCLUDED.relevance_score,
+                        category_scores = EXCLUDED.category_scores,
+                        strengths = EXCLUDED.strengths,
+                        areas_for_improvement = EXCLUDED.areas_for_improvement,
+                        per_question_feedback = EXCLUDED.per_question_feedback,
+                        skill_gaps = EXCLUDED.skill_gaps,
+                        final_assessment = EXCLUDED.final_assessment,
+                        improvement_plan = EXCLUDED.improvement_plan,
+                        filler_word_count = EXCLUDED.filler_word_count,
+                        avg_answer_length = EXCLUDED.avg_answer_length,
+                        pdf_path = EXCLUDED.pdf_path
                     RETURNING id
                 """, (
                     interview_id, user_id,
@@ -635,9 +655,12 @@ Return ONLY valid JSON, no markdown:
                 cursor.execute("""
                     SELECT mi.id, mi.job_role, mi.difficulty, mi.interview_type,
                            mi.question_count, mi.status, mi.created_at,
-                           intf.total_score, intf.pdf_path, intf.id as feedback_id
+                           CASE WHEN mi.status='completed' THEN intf.total_score ELSE NULL END,
+                           CASE WHEN mi.status='completed' THEN intf.pdf_path ELSE NULL END,
+                           CASE WHEN mi.status='completed' THEN intf.id ELSE NULL END
                     FROM mock_interviews mi
-                    LEFT JOIN interview_feedback intf ON intf.interview_id = mi.id
+                    LEFT JOIN interview_feedback intf
+                        ON intf.interview_id = mi.id AND intf.total_score > 0
                     WHERE mi.user_id = %s
                     ORDER BY mi.created_at DESC
                 """, (user_id,))

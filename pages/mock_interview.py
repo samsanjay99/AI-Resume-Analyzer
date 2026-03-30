@@ -206,8 +206,10 @@ def render_ready():
             st.rerun()
     with c3:
         if st.button("🔄 New Questions", use_container_width=True):
-            st.session_state.pop("iv_id", None)
-            st.session_state.pop("iv_q", None)
+            # Keep cfg so user doesn't have to re-select everything
+            # Just clear the questions and go back to setup to regenerate
+            for k in ["iv_id", "iv_q", "iv_exp", "iv_skills", "iv_focus"]:
+                st.session_state.pop(k, None)
             st.session_state.iv_phase = "setup"
             st.rerun()
 

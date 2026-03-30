@@ -118,24 +118,25 @@ JOB DESCRIPTION (extract key requirements for targeted questions):
         diff_map = {
             "easy": (
                 "FRESHER / JUNIOR (0-1 year):\n"
-                "- Ask about fundamentals, not architecture decisions\n"
+                "- Ask about fundamentals only, not architecture decisions\n"
                 "- Focus on what they LEARNED in projects/college\n"
-                "- Avoid production-scale or leadership questions\n"
-                "- Example depth: 'What is X and how have you used it?'"
+                "- Questions must be SHORT — max 15 words each\n"
+                "- Example: 'What is a REST API?' or 'How does a for loop work?'\n"
+                "- NO multi-part questions, NO scenario questions"
             ),
             "medium": (
                 "MID-LEVEL (2-4 years):\n"
                 "- Ask about real project decisions and trade-offs\n"
-                "- Include one scenario-based problem to solve\n"
-                "- Test both hands-on skills and some system thinking\n"
-                "- Example depth: 'Describe a time you had to choose between X and Y — what did you decide and why?'"
+                "- Questions should be 15-25 words each\n"
+                "- Include one scenario-based problem\n"
+                "- Example: 'Describe a time you optimized a slow database query.'"
             ),
             "hard": (
                 "SENIOR / LEAD (5+ years):\n"
                 "- Ask about architecture, scale, mentoring, ownership\n"
-                "- Include complex trade-off and failure/recovery scenarios\n"
-                "- Test leadership, strategic thinking, and cross-team impact\n"
-                "- Example depth: 'How would you design X for 10 million users?'"
+                "- Questions can be 20-35 words\n"
+                "- Include complex trade-off and system design scenarios\n"
+                "- Example: 'How would you design a rate limiter for 10 million users?'"
             ),
         }.get(difficulty, "")
 
@@ -195,7 +196,11 @@ STRICT RULES:
 2. If resume skills were provided, at least 2 questions must directly reference a skill from that list.
 3. If a job description was provided, at least 2 questions must test a requirement from that JD.
 4. Questions will be READ ALOUD by a voice AI — write them as natural speech, short sentences.
-5. NO special characters: no /, *, #, bullet points, numbered lists, or markdown.
+5. QUESTION LENGTH RULES (strictly enforce):
+   - easy: max 15 words per question, simple direct questions only
+   - medium: 15-25 words per question
+   - hard: 20-35 words per question
+6. NO special characters: no /, *, #, bullet points, numbered lists, or markdown.
 6. For expected_answers: list the KEY POINTS a strong candidate should cover — be specific.
 7. For skills_to_test: list the actual skills/competencies each question evaluates.
 

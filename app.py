@@ -1485,7 +1485,7 @@ class ResumeApp:
 
     def render_portfolio_generator(self):
         """Render the portfolio generator page"""
-        from ui_components import apply_modern_styles, page_header
+        from utils.ui_components import apply_modern_styles, page_header
         apply_modern_styles()
         
         # Inject targeted CSS for Portfolio Generator page content only
@@ -2372,7 +2372,7 @@ class ResumeApp:
     def render_about(self):
         """Render the about page"""
         # Apply modern styles
-        from ui_components import apply_modern_styles
+        from utils.ui_components import apply_modern_styles
         import base64
 
         # Function to load image as base64

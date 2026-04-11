@@ -264,6 +264,9 @@ class ResumeApp:
     def apply_global_styles(self):
         st.markdown("""
         <style>
+        /* Hide Streamlit's auto-generated pages nav (we use custom sidebar) */
+        [data-testid="stSidebarNav"] { display: none !important; }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;

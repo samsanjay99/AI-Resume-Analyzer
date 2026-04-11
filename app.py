@@ -2374,27 +2374,160 @@ class ResumeApp:
 
     def render_about(self):
         """Render the about page"""
-        # Apply modern styles
         from utils.ui_components import apply_modern_styles
         import base64
 
-        # Function to load image as base64
         def get_image_as_base64(file_path):
             try:
-                with open(file_path, "rb") as image_file:
-                    encoded = base64.b64encode(image_file.read()).decode()
-                    return f"data:image/jpeg;base64,{encoded}"
+                with open(file_path, "rb") as f:
+                    return f"data:image/jpeg;base64,{base64.b64encode(f.read()).decode()}"
             except:
                 return None
 
-        # Get image path and convert to base64
-        image_path = os.path.join(
-    os.path.dirname(__file__),
-    "assets",
-     "124852522.jpeg")
-        image_base64 = get_image_as_base64(image_path)
+        image_base64 = get_image_as_base64(
+            os.path.join(os.path.dirname(__file__), "assets", "124852522.jpeg"))
 
         apply_modern_styles()
+
+        st.markdown("""
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <style>
+        .about-hero{text-align:center;padding:3rem 1rem 2rem;background:linear-gradient(135deg,#0f172a,#1e293b);
+          border-radius:16px;margin-bottom:2rem;border:1px solid rgba(76,175,80,.2)}
+        .about-hero h1{font-size:2.6rem;color:#4CAF50;margin-bottom:.5rem}
+        .about-hero p{color:#aaa;font-size:1.1rem}
+        .profile-card{text-align:center;padding:2rem;background:rgba(30,41,59,.8);
+          border-radius:16px;margin-bottom:2rem;border:1px solid rgba(76,175,80,.15)}
+        .profile-img{width:160px;height:160px;border-radius:50%;object-fit:cover;
+          border:4px solid #4CAF50;margin:0 auto 1rem;display:block}
+        .profile-name{font-size:1.8rem;color:white;margin-bottom:.3rem}
+        .profile-role{color:#4CAF50;font-size:1rem;margin-bottom:1.2rem}
+        .social-row{display:flex;justify-content:center;gap:1rem;margin:1rem 0}
+        .social-btn{width:48px;height:48px;border-radius:50%;background:rgba(76,175,80,.1);
+          color:#4CAF50;display:flex;align-items:center;justify-content:center;
+          font-size:1.3rem;text-decoration:none;transition:all .3s}
+        .social-btn:hover{background:#4CAF50;color:white;transform:translateY(-3px)}
+        .bio{color:#ccc;line-height:1.8;font-size:.95rem;text-align:left;margin-top:1rem}
+        .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+          gap:1.2rem;margin:1.5rem 0}
+        .feat-card{background:rgba(30,41,59,.8);border:1px solid rgba(76,175,80,.15);
+          border-radius:12px;padding:1.5rem;transition:border-color .3s}
+        .feat-card:hover{border-color:#4CAF50}
+        .feat-icon{font-size:2rem;color:#4CAF50;margin-bottom:.8rem}
+        .feat-title{color:white;font-size:1.05rem;font-weight:700;margin-bottom:.5rem}
+        .feat-desc{color:#aaa;font-size:.85rem;line-height:1.6}
+        .tech-stack{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem;justify-content:center}
+        .tech-badge{background:rgba(76,175,80,.1);color:#4CAF50;border:1px solid rgba(76,175,80,.3);
+          padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:600}
+        .section-title{color:white;font-size:1.4rem;font-weight:700;margin:2rem 0 1rem;
+          padding-bottom:.5rem;border-bottom:2px solid rgba(76,175,80,.3)}
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Hero
+        st.markdown("""
+        <div class="about-hero">
+          <h1>🚀 Smart Resume AI</h1>
+          <p>Your all-in-one AI-powered career platform — from resume analysis to live mock interviews</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Profile
+        img_src = image_base64 or "https://avatars.githubusercontent.com/samsanjay99"
+        st.markdown(f"""
+        <div class="profile-card">
+          <img src="{img_src}" class="profile-img"
+               onerror="this.src='https://avatars.githubusercontent.com/samsanjay99'">
+          <div class="profile-name">Sanjay Kumar CP</div>
+          <div class="profile-role">AI/ML Developer · Full Stack Engineer</div>
+          <div class="social-row">
+            <a href="https://github.com/samsanjay99" class="social-btn" target="_blank">
+              <i class="fab fa-github"></i></a>
+            <a href="https://www.linkedin.com/in/sanjay-kumar-cp-174198329" class="social-btn" target="_blank">
+              <i class="fab fa-linkedin"></i></a>
+            <a href="mailto:sanjaykumarcp9900@gmail.com" class="social-btn" target="_blank">
+              <i class="fas fa-envelope"></i></a>
+          </div>
+          <p class="bio">
+            Hi, I'm Sanjay — a passionate AI/ML developer who built Smart Resume AI to help job seekers
+            stand out in a competitive market. This platform combines resume intelligence, voice AI interviews,
+            personalized learning, and portfolio generation into one seamless experience.
+            Every feature is designed to give you a real edge in your career journey.
+          </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Features
+        st.markdown('<div class="section-title">✨ Platform Features</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="features-grid">
+          <div class="feat-card">
+            <div class="feat-icon"><i class="fas fa-file-alt"></i></div>
+            <div class="feat-title">AI Resume Analysis</div>
+            <div class="feat-desc">Deep analysis of your resume with ATS scoring, keyword optimization,
+            skill gap detection, and actionable improvement suggestions powered by Gemini AI.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon"><i class="fas fa-microphone"></i></div>
+            <div class="feat-title">AI Mock Interviews</div>
+            <div class="feat-desc">Live voice interviews with VAPI's Clara AI or free browser-based voice mode.
+            Get scored on communication, technical knowledge, problem-solving, and more with a full PDF report.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon"><i class="fas fa-graduation-cap"></i></div>
+            <div class="feat-title">Learning Dashboard</div>
+            <div class="feat-desc">Personalized course recommendations based on your skill gaps from resume analysis
+            and mock interviews. Track your learning progress across all topics.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon"><i class="fas fa-globe"></i></div>
+            <div class="feat-title">Portfolio Generator</div>
+            <div class="feat-desc">Instantly transform your resume into a professional web portfolio with multiple
+            design templates. Deploy to Netlify with one click and share your personal URL.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon"><i class="fas fa-chart-bar"></i></div>
+            <div class="feat-title">Analytics Dashboard</div>
+            <div class="feat-desc">Track your resume analysis history, interview scores over time, skill progression,
+            and get insights into your career development journey.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon"><i class="fas fa-search"></i></div>
+            <div class="feat-title">Job Search</div>
+            <div class="feat-desc">Search for relevant job opportunities based on your skills and target role.
+            Get matched with positions that align with your resume profile.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon"><i class="fas fa-user-circle"></i></div>
+            <div class="feat-title">Profile Management</div>
+            <div class="feat-desc">Manage your professional profile, track all your resume analyses, interview
+            history, and download your PDF reports anytime.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon"><i class="fas fa-shield-alt"></i></div>
+            <div class="feat-title">Secure & Private</div>
+            <div class="feat-desc">Your data is stored securely in a PostgreSQL database. All API keys are
+            environment-protected and your personal information is never shared.</div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Tech stack
+        st.markdown('<div class="section-title">🛠️ Built With</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="tech-stack">
+          <span class="tech-badge">Python</span>
+          <span class="tech-badge">Streamlit</span>
+          <span class="tech-badge">Google Gemini AI</span>
+          <span class="tech-badge">VAPI Voice AI</span>
+          <span class="tech-badge">PostgreSQL (Neon)</span>
+          <span class="tech-badge">Vercel Serverless</span>
+          <span class="tech-badge">GitHub Pages</span>
+          <span class="tech-badge">ReportLab PDF</span>
+          <span class="tech-badge">Web Speech API</span>
+          <span class="tech-badge">Netlify</span>
+        </div>
+        """, unsafe_allow_html=True)
 
         # Add Font Awesome icons and custom CSS
         st.markdown("""
@@ -2604,34 +2737,6 @@ class ResumeApp:
                 <div class="feature-card">
                     <i class="fas fa-file-pdf feature-icon"></i>
                     <h3 class="feature-title">Smart Document Processing</h3>
-                    <p class="feature-description">
-                        Upload PDF or DOCX files with advanced text extraction, OCR support for scanned documents,
-                        and intelligent content parsing for accurate analysis.
-                    </p>
-                </div>
-                <div class="feature-card">
-                    <i class="fas fa-download feature-icon"></i>
-                    <h3 class="feature-title">Export & Generate</h3>
-                    <p class="feature-description">
-                        Download detailed PDF reports, generate enhanced resumes, and export complete portfolio
-                        packages ready for deployment and sharing.
-                    </p>
-                </div>
-                <div class="feature-card">
-                    <i class="fas fa-shield-alt feature-icon"></i>
-                    <h3 class="feature-title">Privacy & Security</h3>
-                    <p class="feature-description">
-                        Your data security is our priority. All processing is secure, with no permanent storage
-                        of your personal information and complete privacy protection.
-                    </p>
-                </div>
-            </div>
-            <div style="text-align: center; margin: 3rem 0;">
-                <a href="?page=analyzer" class="cta-button">
-                    Start Your Journey
-                    <i class="fas fa-arrow-right" style="margin-left: 10px;"></i>
-                </a>
-            </div>
         """, unsafe_allow_html=True)
 
     def render_analyzer(self):

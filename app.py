@@ -2677,66 +2677,6 @@ class ResumeApp:
                     </a>
                     <a href="https://www.linkedin.com/in/sanjay-kumar-cp-174198329" class="social-link" target="_blank">
                         <i class="fab fa-linkedin"></i>
-                    </a>
-                    <a href="mailto:sanjaykumarcp9900@gmail.com" class="social-link" target="_blank">
-                        <i class="fas fa-envelope"></i>
-                    </a>
-                </div>
-                <p class="bio-text">
-                    Hello! I'm Sanjay Kumar CP, a passionate AI/ML developer specializing in intelligent resume optimization.
-                    I enhanced Smart Resume AI to provide cutting-edge multi-model analysis and automated portfolio generation.
-                    With expertise in machine learning and career development, I've designed this platform to revolutionize
-                    how professionals showcase their skills and advance their careers through AI-powered insights.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-
-        # Vision Section
-        st.markdown("""
-            <div class="vision-section">
-                <i class="fas fa-lightbulb vision-icon"></i>
-                <h2 class="vision-title">Our Vision & Innovation</h2>
-<parameter name="text">                <p class="vision-text">
-                    "Smart Resume AI represents the future of career advancement through proprietary algorithmic technology.
-                    Our platform features dual-mode analysis: Smart Analysis (LSE algorithm) for rapid assessment and 
-                    Deep Analysis (ACU algorithm) for comprehensive evaluation. Beyond analysis, we offer automated portfolio
-                    generation that transforms your resume into a professional web portfolio instantly. This comprehensive
-                    approach empowers job seekers to not just optimize their resumes, but create a complete digital presence
-                    that stands out in today's competitive job market."
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-
-        # Features Section
-        st.markdown("""
-            <div class="features-grid">
-                <div class="feature-card">
-                    <i class="fas fa-brain feature-icon"></i>
-                    <h3 class="feature-title">Dual-Mode Analysis System</h3>
-                    <p class="feature-description">
-                        Choose between Smart Analysis (LSE algorithm - fast, 2-5s) or Deep Analysis (ACU algorithm - comprehensive, 5-15s).
-                        Proprietary algorithms with 87-94% accuracy for optimal resume optimization.
-                    </p>
-                </div>
-                <div class="feature-card">
-                    <i class="fas fa-globe feature-icon"></i>
-                    <h3 class="feature-title">Automated Portfolio Generation</h3>
-                    <p class="feature-description">
-                        Transform your resume into a stunning web portfolio instantly. Generate professional websites
-                        with modern designs, responsive layouts, and downloadable packages.
-                    </p>
-                </div>
-                <div class="feature-card">
-                    <i class="fas fa-chart-line feature-icon"></i>
-                    <h3 class="feature-title">Advanced Analytics</h3>
-                    <p class="feature-description">
-                        Get detailed ATS scores, keyword optimization, and data-driven insights to maximize your
-                        resume's effectiveness across different industries and roles.
-                    </p>
-                </div>
-                <div class="feature-card">
-                    <i class="fas fa-file-pdf feature-icon"></i>
-                    <h3 class="feature-title">Smart Document Processing</h3>
         """, unsafe_allow_html=True)
 
     def render_analyzer(self):

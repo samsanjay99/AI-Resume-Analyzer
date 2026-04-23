@@ -296,9 +296,37 @@ def render_market_insights():
 
 def render_job_search():
     """Render job search page with enhanced features"""
-    st.title("🔍 Smart Job Search")
-    st.markdown("Find Your Dream Job Across Multiple Platforms")
-    
+    # ── Premium Header ─────────────────────────────────────────
+    st.markdown("""
+    <div style='background:linear-gradient(135deg,#0f172a,#1e293b);
+      padding:2rem;border-radius:16px;margin-bottom:2rem;
+      border:1px solid rgba(0,180,255,.15);position:relative;overflow:hidden;'>
+      <div style='position:absolute;top:-40px;right:-40px;width:200px;height:200px;
+        background:radial-gradient(circle,rgba(0,180,255,.07),transparent);
+        border-radius:50%;pointer-events:none;'></div>
+      <div style='display:flex;align-items:center;gap:12px;margin-bottom:8px;'>
+        <span style='font-size:2rem;'>🔍</span>
+        <div>
+          <div style='color:#00b4ff;font-size:1.4rem;font-weight:800;
+            font-family:Space Grotesk,sans-serif;'>Smart Job Search</div>
+          <div style='color:#a0a0c0;font-size:.88rem;'>
+            Search across LinkedIn, Indeed, Naukri, Foundit and more — all in one place
+          </div>
+        </div>
+      </div>
+      <div style='display:flex;gap:8px;flex-wrap:wrap;margin-top:.8rem;'>
+        <span style='background:rgba(0,180,255,.1);color:#00b4ff;border:1px solid rgba(0,180,255,.2);
+          border-radius:50px;padding:3px 12px;font-size:.75rem;font-weight:600;'>🌐 Multi-Portal</span>
+        <span style='background:rgba(0,255,136,.1);color:#00ff88;border:1px solid rgba(0,255,136,.2);
+          border-radius:50px;padding:3px 12px;font-size:.75rem;font-weight:600;'>📊 Market Insights</span>
+        <span style='background:rgba(168,85,247,.1);color:#a855f7;border:1px solid rgba(168,85,247,.2);
+          border-radius:50px;padding:3px 12px;font-size:.75rem;font-weight:600;'>💼 LinkedIn Scraper</span>
+        <span style='background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.2);
+          border-radius:50px;padding:3px 12px;font-size:.75rem;font-weight:600;'>💰 Salary Insights</span>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
     # Market Insights Section (Above Search)
     render_market_insights()
     

@@ -779,12 +779,22 @@ async function tryVapi() {{
         setTimeout(() => {{ D.aiAv.className='av ai-bg'; }}, 800);
       }} else {{
         addBubble('ai', msg.transcript.trim(), false);
-        const aiCount = S.messages.filter(m => m.role==='ai').length;
-        const qi = aiCount-1;
-        if (qi >= 0 && qi < TOTAL_Q) {{
-          D.qNum.textContent='Question '+(qi+1)+' of '+TOTAL_Q;
-          D.qTxt.textContent=QUESTIONS[qi];
-          D.qCard.style.display='block';
+        // Only update question card if this AI message IS one of the questions
+        // (not the greeting or acknowledgement speech)
+        const msgText = msg.transcript.trim().toLowerCase();
+        let matchedQ = -1;
+        for (let qi = 0; qi < TOTAL_Q; qi++) {{
+          if (msgText.includes(QUESTIONS[qi].toLowerCase().slice(0, 40))) {{
+            matchedQ = qi;
+            break;
+          }}
+        }}
+        if (matchedQ >= 0) {{
+          D.qNum.textContent = 'Question '+(matchedQ+1)+' of '+TOTAL_Q;
+          D.qTxt.textContent = QUESTIONS[matchedQ];
+          D.qCard.style.display = 'block';
+          const answeredSoFar = S.messages.filter(m => m.role==='user').length;
+          upProg(answeredSoFar);
         }}
       }}
     }}

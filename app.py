@@ -271,6 +271,17 @@ class ResumeApp:
             st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
         except Exception as _e:
             print(f'CSS load error: {_e}')
+        
+        # Always hide Streamlit Cloud badges regardless of CSS file loading
+        st.markdown("""
+        <style>
+        footer {visibility: hidden !important; display: none !important;}
+        [data-testid="stDecoration"] {display: none !important;}
+        [class*="viewerBadge"] {display: none !important;}
+        .styles_viewerBadge__CvC9N {display: none !important;}
+        #stDecoration {display: none !important;}
+        </style>
+        """, unsafe_allow_html=True)
 
     def add_footer(self):
         """Add a minimal professional footer"""

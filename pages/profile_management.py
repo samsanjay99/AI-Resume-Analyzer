@@ -174,14 +174,6 @@ def render_profile_page():
         box-shadow: 0 4px 20px rgba(0,255,136,0.2);
     }
     
-    .section-card {
-        background: rgba(255,255,255,0.02);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 20px;
-        padding: 2rem;
-        margin: 1.5rem 0;
-    }
-    
     .section-title {
         font-size: 1.5rem;
         font-weight: 700;
@@ -261,53 +253,30 @@ def render_profile_page():
     """, unsafe_allow_html=True)
     
     # Performance Dashboard
-    st.markdown('<div class="section-title">📊 Your Performance Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size:1.4rem;font-weight:700;color:#00ff88;margin-bottom:1rem;">📊 Your Performance Dashboard</p>', unsafe_allow_html=True)
     
+    SCARD = "background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:15px;padding:1.5rem;text-align:center;"
+    SVAL = "font-size:2.2rem;font-weight:800;background:linear-gradient(135deg,#00ff88,#00b4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0.4rem 0;"
+    SLBL = "color:#a0a0c0;font-size:0.85rem;text-transform:uppercase;letter-spacing:1px;"
+
     try:
         stats = get_resume_stats(user_id) or {}
         
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            st.markdown(f"""
-            <div class="stat-card">
-                <div style="font-size: 2rem;">📄</div>
-                <div class="stat-value">{stats.get('total_resumes', 0)}</div>
-                <div class="stat-label">Resumes</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
+            st.markdown(f'<div style="{SCARD}"><div style="font-size:2rem;">📄</div><div style="{SVAL}">{stats.get("total_resumes", 0)}</div><div style="{SLBL}">Resumes</div></div>', unsafe_allow_html=True)
         with col2:
-            st.markdown(f"""
-            <div class="stat-card">
-                <div style="font-size: 2rem;">🔍</div>
-                <div class="stat-value">{stats.get('total_analyses', 0)}</div>
-                <div class="stat-label">Analyses</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
+            st.markdown(f'<div style="{SCARD}"><div style="font-size:2rem;">🔍</div><div style="{SVAL}">{stats.get("total_analyses", 0)}</div><div style="{SLBL}">Analyses</div></div>', unsafe_allow_html=True)
         with col3:
             avg_score = stats.get('avg_score', 0)
-            st.markdown(f"""
-            <div class="stat-card">
-                <div style="font-size: 2rem;">⭐</div>
-                <div class="stat-value">{f"{avg_score}%" if avg_score else "N/A"}</div>
-                <div class="stat-label">Avg Score</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
+            st.markdown(f'<div style="{SCARD}"><div style="font-size:2rem;">⭐</div><div style="{SVAL}">{f"{avg_score}%" if avg_score else "N/A"}</div><div style="{SLBL}">Avg Score</div></div>', unsafe_allow_html=True)
         with col4:
-            st.markdown(f"""
-            <div class="stat-card">
-                <div style="font-size: 2rem;">🌐</div>
-                <div class="stat-value">{stats.get('total_portfolios', 0)}</div>
-                <div class="stat-label">Portfolios</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f'<div style="{SCARD}"><div style="font-size:2rem;">🌐</div><div style="{SVAL}">{stats.get("total_portfolios", 0)}</div><div style="{SLBL}">Portfolios</div></div>', unsafe_allow_html=True)
     except:
         st.info("Start using the platform to see your statistics!")
     
-    st.markdown('<div style="height: 2rem;"></div>', unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     
     # Tabs for different sections
     tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "📝 Edit Profile", "🏆 Achievements", "⚙️ Settings"])
@@ -328,98 +297,66 @@ def render_profile_page():
 def render_overview_tab(user_id, profile, stats):
     """Render overview tab with activity and skills"""
     
-    # Profile info cards row
+    CARD = "background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:15px;padding:1.2rem;margin-bottom:1rem;"
+    TITLE = "font-size:1rem;font-weight:700;color:#00ff88;margin-bottom:0.5rem;"
+    VAL = "color:#f0f0ff;font-size:1rem;"
+
+    # Info cards row
     col_a, col_b, col_c = st.columns(3)
-    
     with col_a:
-        st.markdown(f"""
-        <div class="section-card" style="margin-top:0">
-            <div class="section-title" style="font-size:1.1rem;">📍 Location</div>
-            <div style="color:#f0f0ff; font-size:1rem;">{profile.get('location') or '—'}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.markdown(f'<div style="{CARD}"><div style="{TITLE}">📍 Location</div><div style="{VAL}">{profile.get("location") or "—"}</div></div>', unsafe_allow_html=True)
     with col_b:
-        st.markdown(f"""
-        <div class="section-card" style="margin-top:0">
-            <div class="section-title" style="font-size:1.1rem;">💼 Experience Level</div>
-            <div style="color:#f0f0ff; font-size:1rem;">{profile.get('experience_level') or '—'}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.markdown(f'<div style="{CARD}"><div style="{TITLE}">💼 Experience</div><div style="{VAL}">{profile.get("experience_level") or "—"}</div></div>', unsafe_allow_html=True)
     with col_c:
-        st.markdown(f"""
-        <div class="section-card" style="margin-top:0">
-            <div class="section-title" style="font-size:1.1rem;">🎯 Target Role</div>
-            <div style="color:#f0f0ff; font-size:1rem;">{profile.get('target_job_role') or '—'}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.markdown(f'<div style="{CARD}"><div style="{TITLE}">🎯 Target Role</div><div style="{VAL}">{profile.get("target_job_role") or "—"}</div></div>', unsafe_allow_html=True)
+
     # Bio
     if profile.get('bio'):
-        st.markdown(f"""
-        <div class="section-card">
-            <div class="section-title">📝 About</div>
-            <div style="color:#d0d0e0; line-height:1.7; font-size:0.95rem;">{profile.get('bio')}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.markdown(f'<div style="{CARD}"><div style="{TITLE}">📝 About</div><div style="color:#d0d0e0;line-height:1.7;font-size:0.95rem;">{profile.get("bio")}</div></div>', unsafe_allow_html=True)
+
     # Education
     if profile.get('education'):
-        st.markdown(f"""
-        <div class="section-card">
-            <div class="section-title">🎓 Education</div>
-            <div style="color:#d0d0e0; font-size:0.95rem;">{profile.get('education')}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.markdown(f'<div style="{CARD}"><div style="{TITLE}">🎓 Education</div><div style="color:#d0d0e0;font-size:0.95rem;">{profile.get("education")}</div></div>', unsafe_allow_html=True)
+
     # Social links
     linkedin = profile.get('linkedin_url')
     github = profile.get('github_url')
-    portfolio = profile.get('portfolio_url')
-    
-    if linkedin or github or portfolio:
-        links_html = '<div class="section-card"><div class="section-title">🔗 Connect</div><div style="display:flex; gap:1rem; flex-wrap:wrap;">'
+    portfolio_url = profile.get('portfolio_url')
+    if linkedin or github or portfolio_url:
+        links = ''
         if linkedin:
-            links_html += f'<a href="{linkedin}" target="_blank" style="background:rgba(0,180,255,0.1);color:#00b4ff;padding:0.5rem 1.2rem;border-radius:50px;border:1px solid rgba(0,180,255,0.3);text-decoration:none;font-weight:600;">🔗 LinkedIn</a>'
+            links += f'<a href="{linkedin}" target="_blank" style="background:rgba(0,180,255,0.1);color:#00b4ff;padding:0.5rem 1.2rem;border-radius:50px;border:1px solid rgba(0,180,255,0.3);text-decoration:none;font-weight:600;margin:0.3rem;display:inline-block;">🔗 LinkedIn</a>'
         if github:
-            links_html += f'<a href="{github}" target="_blank" style="background:rgba(168,85,247,0.1);color:#a855f7;padding:0.5rem 1.2rem;border-radius:50px;border:1px solid rgba(168,85,247,0.3);text-decoration:none;font-weight:600;">💻 GitHub</a>'
-        if portfolio:
-            links_html += f'<a href="{portfolio}" target="_blank" style="background:rgba(0,255,136,0.1);color:#00ff88;padding:0.5rem 1.2rem;border-radius:50px;border:1px solid rgba(0,255,136,0.3);text-decoration:none;font-weight:600;">🌐 Portfolio</a>'
-        links_html += '</div></div>'
-        st.markdown(links_html, unsafe_allow_html=True)
-    
+            links += f'<a href="{github}" target="_blank" style="background:rgba(168,85,247,0.1);color:#a855f7;padding:0.5rem 1.2rem;border-radius:50px;border:1px solid rgba(168,85,247,0.3);text-decoration:none;font-weight:600;margin:0.3rem;display:inline-block;">💻 GitHub</a>'
+        if portfolio_url:
+            links += f'<a href="{portfolio_url}" target="_blank" style="background:rgba(0,255,136,0.1);color:#00ff88;padding:0.5rem 1.2rem;border-radius:50px;border:1px solid rgba(0,255,136,0.3);text-decoration:none;font-weight:600;margin:0.3rem;display:inline-block;">🌐 Portfolio</a>'
+        st.markdown(f'<div style="{CARD}"><div style="{TITLE}">🔗 Connect</div><div style="flex-wrap:wrap;">{links}</div></div>', unsafe_allow_html=True)
+
     # Skills
     skills = profile.get('skills') or get_user_top_skills(user_id)
     if skills:
-        skills_html = '<div class="section-card"><div class="section-title">💡 Skills</div>'
-        for skill in skills[:15]:
-            skills_html += f'<span class="skill-badge">{skill}</span>'
-        skills_html += '</div>'
-        st.markdown(skills_html, unsafe_allow_html=True)
-    
+        badges = ''.join(f'<span style="display:inline-block;background:rgba(0,255,136,0.1);color:#00ff88;border:1px solid rgba(0,255,136,0.3);padding:0.4rem 0.9rem;border-radius:50px;font-size:0.82rem;font-weight:600;margin:0.25rem;">{s}</span>' for s in skills[:15])
+        st.markdown(f'<div style="{CARD}"><div style="{TITLE}">💡 Skills</div>{badges}</div>', unsafe_allow_html=True)
+
     # Activity chart + recent activity
     col1, col2 = st.columns([2, 1])
-    
     with col1:
         st.markdown("#### 📈 Activity Timeline")
         activity_data = get_user_activity(user_id)
         if activity_data:
-            fig = create_activity_chart(activity_data)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(create_activity_chart(activity_data), use_container_width=True)
         else:
             st.info("Start using the platform to see your activity!")
-    
+
     with col2:
         st.markdown("#### ⏱️ Recent Activity")
         recent = get_recent_activities(user_id)
         if recent:
             for activity in recent:
                 st.markdown(f"""
-                <div class="timeline-item">
-                    <div style="font-weight:600;color:#f0f0ff;margin-bottom:0.2rem;">
-                        {activity['icon']} {activity['title']}
-                    </div>
+                <div style="position:relative;padding-left:2rem;padding-bottom:1.2rem;border-left:2px solid rgba(0,255,136,0.2);">
+                    <div style="position:absolute;left:-6px;top:0;width:12px;height:12px;border-radius:50%;background:#00ff88;box-shadow:0 0 10px rgba(0,255,136,0.5);"></div>
+                    <div style="font-weight:600;color:#f0f0ff;margin-bottom:0.2rem;">{activity['icon']} {activity['title']}</div>
                     <div style="color:#a0a0c0;font-size:0.82rem;">{activity['time']}</div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -505,17 +442,15 @@ def render_achievements_tab(user_id, stats):
     """Render achievements tab"""
     
     st.markdown("### 🏆 Your Achievements")
+    CARD = "background:linear-gradient(135deg,rgba(0,255,136,0.05),rgba(0,180,255,0.05));border:1px solid rgba(0,255,136,0.2);border-radius:15px;padding:1.2rem;margin:0.8rem 0;"
     
     achievements = get_user_achievements(stats)
-    
     for achievement in achievements:
         st.markdown(f"""
-        <div class="achievement-card">
-            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">{achievement['icon']}</div>
-            <div style="font-weight: 600; color: #00ff88; margin-bottom: 0.3rem; font-size: 1.1rem;">
-                {achievement['title']}
-            </div>
-            <div style="color: #a0a0c0; font-size: 0.9rem;">{achievement['description']}</div>
+        <div style="{CARD}">
+            <div style="font-size:2rem;margin-bottom:0.4rem;">{achievement['icon']}</div>
+            <div style="font-weight:600;color:#00ff88;margin-bottom:0.3rem;font-size:1.05rem;">{achievement['title']}</div>
+            <div style="color:#a0a0c0;font-size:0.88rem;">{achievement['description']}</div>
         </div>
         """, unsafe_allow_html=True)
 

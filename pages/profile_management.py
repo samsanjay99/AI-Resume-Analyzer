@@ -402,22 +402,16 @@ def render_overview_tab(user_id, profile, stats):
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        st.markdown('<div class="section-card">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">📈 Activity Timeline</div>', unsafe_allow_html=True)
-        
+        st.markdown("#### 📈 Activity Timeline")
         activity_data = get_user_activity(user_id)
         if activity_data:
             fig = create_activity_chart(activity_data)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Start using the platform to see your activity!")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
-        st.markdown('<div class="section-card">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">⏱️ Recent Activity</div>', unsafe_allow_html=True)
-        
+        st.markdown("#### ⏱️ Recent Activity")
         recent = get_recent_activities(user_id)
         if recent:
             for activity in recent:
@@ -431,15 +425,12 @@ def render_overview_tab(user_id, profile, stats):
                 """, unsafe_allow_html=True)
         else:
             st.info("No recent activity yet!")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_edit_tab(user_id, profile):
     """Render edit profile tab"""
     
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">📝 Edit Your Profile</div>', unsafe_allow_html=True)
+    st.markdown("### 📝 Edit Your Profile")
     
     with st.form("edit_profile_form"):
         col1, col2 = st.columns(2)
@@ -508,15 +499,12 @@ def render_edit_tab(user_id, profile):
                 st.rerun()
             else:
                 st.error(f"❌ {result['message']}")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_achievements_tab(user_id, stats):
     """Render achievements tab"""
     
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">🏆 Your Achievements</div>', unsafe_allow_html=True)
+    st.markdown("### 🏆 Your Achievements")
     
     achievements = get_user_achievements(stats)
     
@@ -530,15 +518,12 @@ def render_achievements_tab(user_id, stats):
             <div style="color: #a0a0c0; font-size: 0.9rem;">{achievement['description']}</div>
         </div>
         """, unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_settings_tab(user_id, user_email):
     """Render settings tab"""
     
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">⚙️ Account Settings</div>', unsafe_allow_html=True)
+    st.markdown("### ⚙️ Account Settings")
     
     col1, col2, col3 = st.columns(3)
     
@@ -588,8 +573,6 @@ def render_settings_tab(user_id, user_email):
             if cancel:
                 st.session_state['show_change_password'] = False
                 st.rerun()
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # Helper functions

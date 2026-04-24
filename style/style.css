@@ -735,16 +735,12 @@ hr {
 
 /* ── Hide Streamlit branding (but keep header visible) ───────────────────────────────── */
 #MainMenu { visibility: hidden !important; }
-footer { visibility: hidden !important; display: none !important; height: 0 !important; overflow: hidden !important; }
+footer { visibility: hidden !important; display: none !important; }
 [data-testid="stDecoration"] { display: none !important; }
 .viewerBadge_container__r5tak { display: none !important; }
 .viewerBadge_link__qRIco { display: none !important; }
 [class*="viewerBadge"] { display: none !important; }
-[class*="ViewerBadge"] { display: none !important; }
 .styles_viewerBadge__CvC9N { display: none !important; }
-iframe[title*="badge" i] { display: none !important; }
-iframe[title*="streamlit" i] { display: none !important; }
-a[href*="github.com"][target="_blank"] { display: none !important; }
 
 /* ── Hide Deploy button but keep loading animation ──── */
 .stDeployButton { display: none !important; }

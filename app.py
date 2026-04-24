@@ -274,37 +274,7 @@ class ResumeApp:
 
     def add_footer(self):
         """Add a footer to all pages"""
-        st.markdown("<hr style='margin-top: 50px; margin-bottom: 20px;'>", unsafe_allow_html=True)
-        
-        col1, col2, col3 = st.columns([1, 3, 1])
-        
-        with col2:
-            # GitHub star button with lottie animation
-            st.markdown("""
-            <div style='display: flex; justify-content: center; align-items: center; margin-bottom: 10px;'>
-                <a href='https://github.com/samsanjay99/AI-Resume-Analyzer-And-Enhancement-system' target='_blank' style='text-decoration: none;'>
-                    <div style='display: flex; align-items: center; background-color: #24292e; padding: 5px 10px; border-radius: 5px; transition: all 0.3s ease;'>
-                        <svg height="16" width="16" viewBox="0 0 16 16" version="1.1" style='margin-right: 5px;'>
-                            <path fill-rule="evenodd" d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.72-4.194L.818 6.374a.75.75 0 01.416-1.28l4.21-.611L7.327.668A.75.75 0 018 .25z" fill="gold"></path>
-                        </svg>
-                        <span style='color: white; font-size: 14px;'>Star this repo</span>
-                    </div>
-                </a>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Footer text
-            st.markdown("""
-            <p style='text-align: center;'>
-                Powered by <b>Streamlit</b> and <b>Google Gemini AI</b> | Developed by 
-                <a href="https://github.com/samsanjay99" target="_blank" style='text-decoration: none; color: #FFFFFF'>
-                    <b>Sanjay (samsanjay99)</b>
-                </a>
-            </p>
-            <p style='text-align: center; font-size: 12px; color: #888888;'>
-                "Every star counts! If you find this project helpful, please consider starring the repo to help it reach more people."
-            </p>
-            """, unsafe_allow_html=True)
+        pass
 
     def load_image(self, image_name):
         """Load image from static directory"""

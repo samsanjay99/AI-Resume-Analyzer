@@ -272,16 +272,105 @@ class ResumeApp:
         except Exception as _e:
             print(f'CSS load error: {_e}')
         
-        # Always hide Streamlit Cloud badges regardless of CSS file loading
+        # Aggressively hide Streamlit Cloud badges with CSS + JavaScript
         st.markdown("""
         <style>
-        footer {visibility: hidden !important; display: none !important;}
+        /* Hide footer and all badge variations */
+        footer {visibility: hidden !important; display: none !important; height: 0 !important; overflow: hidden !important;}
         [data-testid="stDecoration"] {display: none !important;}
         [class*="viewerBadge"] {display: none !important;}
+        [class*="ViewerBadge"] {display: none !important;}
         .styles_viewerBadge__CvC9N {display: none !important;}
         #stDecoration {display: none !important;}
+        iframe[title*="badge" i] {display: none !important;}
+        iframe[title*="streamlit" i] {display: none !important;}
+        a[href*="github.com"][target="_blank"] {display: none !important;}
+        div[data-testid="stToolbar"] > div:last-child {display: none !important;}
         </style>
         """, unsafe_allow_html=True)
+        
+        # Use st.components to inject more aggressive JavaScript
+        import streamlit.components.v1 as components
+        components.html("""
+        <script>
+        (function() {
+            function hideBadges() {
+                try {
+                    // Try both current document and parent
+                    var docs = [document];
+                    if (window.parent && window.parent.document !== document) {
+                        docs.push(window.parent.document);
+                    }
+                    if (window.top && window.top.document !== document) {
+                        docs.push(window.top.document);
+                    }
+                    
+                    docs.forEach(function(doc) {
+                        // Hide footer
+                        var footers = doc.querySelectorAll('footer');
+                        footers.forEach(function(f) { 
+                            f.style.cssText = 'display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;'; 
+                        });
+                        
+                        // Hide badges by class
+                        var selectors = [
+                            '[class*="viewerBadge"]',
+                            '[class*="ViewerBadge"]',
+                            '[data-testid="stDecoration"]',
+                            'iframe[title*="badge"]',
+                            'iframe[title*="streamlit"]',
+                            'a[href*="github.com"][target="_blank"]'
+                        ];
+                        
+                        selectors.forEach(function(sel) {
+                            var elements = doc.querySelectorAll(sel);
+                            elements.forEach(function(el) {
+                                el.style.cssText = 'display:none!important;visibility:hidden!important;';
+                            });
+                        });
+                        
+                        // Hide last child of toolbar (usually contains badges)
+                        var toolbar = doc.querySelector('[data-testid="stToolbar"]');
+                        if (toolbar && toolbar.lastElementChild) {
+                            var lastChild = toolbar.lastElementChild;
+                            // Check if it contains links or badges
+                            if (lastChild.querySelector('a') || lastChild.querySelector('iframe')) {
+                                lastChild.style.cssText = 'display:none!important;';
+                            }
+                        }
+                    });
+                } catch(e) {
+                    console.log('Badge hiding error:', e);
+                }
+            }
+            
+            // Run immediately
+            hideBadges();
+            
+            // Run after DOM loads
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', hideBadges);
+            } else {
+                setTimeout(hideBadges, 100);
+            }
+            
+            // Keep checking for 10 seconds (badges load async on Cloud)
+            var count = 0;
+            var interval = setInterval(function() {
+                hideBadges();
+                count++;
+                if (count > 20) clearInterval(interval);
+            }, 500);
+            
+            // Also watch for DOM mutations
+            if (typeof MutationObserver !== 'undefined') {
+                var observer = new MutationObserver(hideBadges);
+                observer.observe(document.body, { childList: true, subtree: true });
+                setTimeout(function() { observer.disconnect(); }, 10000);
+            }
+        })();
+        </script>
+        """, height=0)
 
     def add_footer(self):
         """Add a minimal professional footer"""

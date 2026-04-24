@@ -1,195 +1,490 @@
 """
-User Profile Management Page
-Complete profile viewing and editing interface
+User Profile Management Page - LinkedIn Style
+Complete profile viewing and editing interface with stunning design
 """
 import streamlit as st
 from config.profile_manager import ProfileManager
 from auth.auth_manager import AuthManager
+from config.database import get_resume_stats, get_database_connection
+from datetime import datetime
+import plotly.graph_objects as go
+import pandas as pd
 
 
-@st.cache_data(ttl=60)  # Cache for 60 seconds
+@st.cache_data(ttl=60)
 def get_cached_profile(user_id: int):
     """Get profile with caching"""
     return ProfileManager.get_profile(user_id)
 
 
-@st.cache_data(ttl=60)  # Cache for 60 seconds
+@st.cache_data(ttl=60)
 def get_cached_stats(user_id: int):
     """Get profile stats with caching"""
     return ProfileManager.get_profile_stats(user_id)
 
 
 def render_profile_page():
-    """Render the profile management page"""
+    """Render stunning LinkedIn-style profile page"""
     
-    # Check authentication using AuthManager
     if not AuthManager.is_authenticated():
         st.warning("⚠️ Please login to view your profile")
         return
     
-    # Get user data from session
     user_id = AuthManager.get_current_user_id()
     user_email = AuthManager.get_current_user_email()
     user_name = AuthManager.get_current_user_name()
     
-    # Create user dict for compatibility
-    user = {
-        'id': user_id,
-        'email': user_email,
-        'full_name': user_name
+    # Custom CSS for stunning profile
+    st.markdown("""
+    <style>
+    .profile-header {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(0,255,136,0.2);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        position: relative;
+        overflow: hidden;
     }
     
-    # Get profile data with caching
-    profile = get_cached_profile(user_id)
+    .profile-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(0,255,136,0.15) 0%, transparent 70%);
+        border-radius: 50%;
+        animation: float 6s ease-in-out infinite;
+    }
     
-    # If no profile exists, create one
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+    }
+    
+    .profile-avatar {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #00ff88, #00b4ff);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+        margin: 0 auto 1rem;
+        box-shadow: 0 0 40px rgba(0,255,136,0.5);
+        border: 4px solid rgba(0,255,136,0.3);
+        animation: pulse-glow 3s ease-in-out infinite;
+        position: relative;
+        z-index: 1;
+    }
+    
+    @keyframes pulse-glow {
+        0%, 100% { box-shadow: 0 0 40px rgba(0,255,136,0.4); }
+        50% { box-shadow: 0 0 60px rgba(0,255,136,0.7); }
+    }
+    
+    .profile-name {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #00ff88, #00b4ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0.5rem 0;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .profile-email {
+        color: #a0a0c0;
+        font-size: 1.1rem;
+        text-align: center;
+        margin-bottom: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .profile-badge {
+        display: inline-block;
+        background: rgba(0,255,136,0.1);
+        color: #00ff88;
+        padding: 0.4rem 1rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: 1px solid rgba(0,255,136,0.3);
+        margin: 0.3rem;
+        transition: all 0.3s ease;
+    }
+    
+    .profile-badge:hover {
+        background: rgba(0,255,136,0.2);
+        transform: scale(1.05);
+        box-shadow: 0 0 15px rgba(0,255,136,0.3);
+    }
+    
+    .stat-card {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(0,255,136,0.3);
+        box-shadow: 0 8px 32px rgba(0,255,136,0.2);
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #00ff88, #00b4ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0.5rem 0;
+    }
+    
+    .stat-label {
+        color: #a0a0c0;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .achievement-card {
+        background: linear-gradient(135deg, rgba(0,255,136,0.05), rgba(0,180,255,0.05));
+        border: 1px solid rgba(0,255,136,0.2);
+        border-radius: 15px;
+        padding: 1.2rem;
+        margin: 0.8rem 0;
+        transition: all 0.3s ease;
+    }
+    
+    .achievement-card:hover {
+        transform: translateX(10px);
+        border-color: rgba(0,255,136,0.4);
+        box-shadow: 0 4px 20px rgba(0,255,136,0.2);
+    }
+    
+    .section-card {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 20px;
+        padding: 2rem;
+        margin: 1.5rem 0;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #00ff88;
+        margin-bottom: 1.5rem;
+    }
+    
+    .skill-badge {
+        display: inline-block;
+        background: rgba(0,255,136,0.1);
+        color: #00ff88;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: 1px solid rgba(0,255,136,0.3);
+        margin: 0.3rem;
+        transition: all 0.2s ease;
+    }
+    
+    .skill-badge:hover {
+        background: rgba(0,255,136,0.2);
+        transform: scale(1.05);
+        box-shadow: 0 0 15px rgba(0,255,136,0.3);
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-left: 2.5rem;
+        padding-bottom: 1.5rem;
+        border-left: 2px solid rgba(0,255,136,0.2);
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -6px;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #00ff88;
+        box-shadow: 0 0 15px rgba(0,255,136,0.6);
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Get profile data
+    profile = get_cached_profile(user_id) or {}
+    
     if not profile:
-        result = ProfileManager.create_profile(user_id, user.get('full_name'))
+        result = ProfileManager.create_profile(user_id, user_name)
         if result['success']:
-            profile = ProfileManager.get_profile(user_id)
-            # Clear cache after creating profile
+            profile = ProfileManager.get_profile(user_id) or {}
             get_cached_profile.clear()
     
-    # Get profile stats with caching
-    stats = get_cached_stats(user_id)
+    # Ensure stats is always defined
+    stats = {}
     
-    st.title("👤 My Profile")
+    # Profile Header
+    st.markdown(f"""
+    <div class="profile-header">
+        <div class="profile-avatar">👤</div>
+        <h1 class="profile-name">{profile.get('full_name', user_name)}</h1>
+        <p class="profile-email">📧 {user_email}</p>
+        <p style="text-align:center;color:#a0a0c0;margin:0.3rem 0;">
+            {('🎯 ' + profile['target_job_role']) if profile.get('target_job_role') else ''}
+            {'&nbsp;&nbsp;|&nbsp;&nbsp;' if profile.get('target_job_role') and profile.get('location') else ''}
+            {('📍 ' + profile['location']) if profile.get('location') else ''}
+        </p>
+        <div style="text-align: center; margin-top: 1rem;">
+            <span class="profile-badge">🎯 Active Member</span>
+            <span class="profile-badge">⭐ Verified</span>
+            <span class="profile-badge">🚀 Pro User</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Profile completion progress
-    st.progress(stats['completion_percentage'] / 100)
-    st.caption(f"Profile {stats['completion_percentage']}% complete ({stats['completed_fields']}/{stats['total_fields']} fields)")
+    # Performance Dashboard
+    st.markdown('<div class="section-title">📊 Your Performance Dashboard</div>', unsafe_allow_html=True)
     
-    # Create tabs
-    tab1, tab2, tab3 = st.tabs(["📝 Edit Profile", "👁️ View Profile", "📊 Profile Stats"])
+    try:
+        stats = get_resume_stats(user_id) or {}
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.markdown(f"""
+            <div class="stat-card">
+                <div style="font-size: 2rem;">📄</div>
+                <div class="stat-value">{stats.get('total_resumes', 0)}</div>
+                <div class="stat-label">Resumes</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(f"""
+            <div class="stat-card">
+                <div style="font-size: 2rem;">🔍</div>
+                <div class="stat-value">{stats.get('total_analyses', 0)}</div>
+                <div class="stat-label">Analyses</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            avg_score = stats.get('avg_score', 0)
+            st.markdown(f"""
+            <div class="stat-card">
+                <div style="font-size: 2rem;">⭐</div>
+                <div class="stat-value">{f"{avg_score}%" if avg_score else "N/A"}</div>
+                <div class="stat-label">Avg Score</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col4:
+            st.markdown(f"""
+            <div class="stat-card">
+                <div style="font-size: 2rem;">🌐</div>
+                <div class="stat-value">{stats.get('total_portfolios', 0)}</div>
+                <div class="stat-label">Portfolios</div>
+            </div>
+            """, unsafe_allow_html=True)
+    except:
+        st.info("Start using the platform to see your statistics!")
+    
+    st.markdown('<div style="height: 2rem;"></div>', unsafe_allow_html=True)
+    
+    # Tabs for different sections
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "📝 Edit Profile", "🏆 Achievements", "⚙️ Settings"])
     
     with tab1:
-        render_edit_profile(user_id, profile)
+        render_overview_tab(user_id, profile, stats)
     
     with tab2:
-        render_view_profile(profile)
+        render_edit_tab(user_id, profile)
     
     with tab3:
-        render_profile_stats(stats, profile)
-
-
-def render_edit_profile(user_id: int, profile: dict):
-    """Render profile editing form"""
+        render_achievements_tab(user_id, stats)
     
-    st.subheader("Edit Your Profile")
+    with tab4:
+        render_settings_tab(user_id, user_email)
+
+
+def render_overview_tab(user_id, profile, stats):
+    """Render overview tab with activity and skills"""
+    
+    # Profile info cards row
+    col_a, col_b, col_c = st.columns(3)
+    
+    with col_a:
+        st.markdown(f"""
+        <div class="section-card" style="margin-top:0">
+            <div class="section-title" style="font-size:1.1rem;">📍 Location</div>
+            <div style="color:#f0f0ff; font-size:1rem;">{profile.get('location') or '—'}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col_b:
+        st.markdown(f"""
+        <div class="section-card" style="margin-top:0">
+            <div class="section-title" style="font-size:1.1rem;">💼 Experience Level</div>
+            <div style="color:#f0f0ff; font-size:1rem;">{profile.get('experience_level') or '—'}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col_c:
+        st.markdown(f"""
+        <div class="section-card" style="margin-top:0">
+            <div class="section-title" style="font-size:1.1rem;">🎯 Target Role</div>
+            <div style="color:#f0f0ff; font-size:1rem;">{profile.get('target_job_role') or '—'}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Bio
+    if profile.get('bio'):
+        st.markdown(f"""
+        <div class="section-card">
+            <div class="section-title">📝 About</div>
+            <div style="color:#d0d0e0; line-height:1.7; font-size:0.95rem;">{profile.get('bio')}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Education
+    if profile.get('education'):
+        st.markdown(f"""
+        <div class="section-card">
+            <div class="section-title">🎓 Education</div>
+            <div style="color:#d0d0e0; font-size:0.95rem;">{profile.get('education')}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Social links
+    linkedin = profile.get('linkedin_url')
+    github = profile.get('github_url')
+    portfolio = profile.get('portfolio_url')
+    
+    if linkedin or github or portfolio:
+        links_html = '<div class="section-card"><div class="section-title">🔗 Connect</div><div style="display:flex; gap:1rem; flex-wrap:wrap;">'
+        if linkedin:
+            links_html += f'<a href="{linkedin}" target="_blank" style="background:rgba(0,180,255,0.1);color:#00b4ff;padding:0.5rem 1.2rem;border-radius:50px;border:1px solid rgba(0,180,255,0.3);text-decoration:none;font-weight:600;">🔗 LinkedIn</a>'
+        if github:
+            links_html += f'<a href="{github}" target="_blank" style="background:rgba(168,85,247,0.1);color:#a855f7;padding:0.5rem 1.2rem;border-radius:50px;border:1px solid rgba(168,85,247,0.3);text-decoration:none;font-weight:600;">💻 GitHub</a>'
+        if portfolio:
+            links_html += f'<a href="{portfolio}" target="_blank" style="background:rgba(0,255,136,0.1);color:#00ff88;padding:0.5rem 1.2rem;border-radius:50px;border:1px solid rgba(0,255,136,0.3);text-decoration:none;font-weight:600;">🌐 Portfolio</a>'
+        links_html += '</div></div>'
+        st.markdown(links_html, unsafe_allow_html=True)
+    
+    # Skills
+    skills = profile.get('skills') or get_user_top_skills(user_id)
+    if skills:
+        skills_html = '<div class="section-card"><div class="section-title">💡 Skills</div>'
+        for skill in skills[:15]:
+            skills_html += f'<span class="skill-badge">{skill}</span>'
+        skills_html += '</div>'
+        st.markdown(skills_html, unsafe_allow_html=True)
+    
+    # Activity chart + recent activity
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">📈 Activity Timeline</div>', unsafe_allow_html=True)
+        
+        activity_data = get_user_activity(user_id)
+        if activity_data:
+            fig = create_activity_chart(activity_data)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Start using the platform to see your activity!")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">⏱️ Recent Activity</div>', unsafe_allow_html=True)
+        
+        recent = get_recent_activities(user_id)
+        if recent:
+            for activity in recent:
+                st.markdown(f"""
+                <div class="timeline-item">
+                    <div style="font-weight:600;color:#f0f0ff;margin-bottom:0.2rem;">
+                        {activity['icon']} {activity['title']}
+                    </div>
+                    <div style="color:#a0a0c0;font-size:0.82rem;">{activity['time']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("No recent activity yet!")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+
+
+def render_edit_tab(user_id, profile):
+    """Render edit profile tab"""
+    
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📝 Edit Your Profile</div>', unsafe_allow_html=True)
     
     with st.form("edit_profile_form"):
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("### 📋 Basic Information")
-            full_name = st.text_input(
-                "Full Name",
-                value=profile.get('full_name', '') or '',
-                placeholder="John Doe"
-            )
+            st.markdown("#### 📋 Basic Information")
+            full_name = st.text_input("Full Name", value=profile.get('full_name', '') or '')
+            username = st.text_input("Username", value=profile.get('username', '') or '')
+            location = st.text_input("Location", value=profile.get('location', '') or '')
             
-            username = st.text_input(
-                "Username (Public)",
-                value=profile.get('username', '') or '',
-                placeholder="johndoe",
-                help="Unique username for your public profile"
-            )
-            
-            location = st.text_input(
-                "Location",
-                value=profile.get('location', '') or '',
-                placeholder="San Francisco, CA"
-            )
-            
-            preferred_language = st.selectbox(
-                "Preferred Language",
-                options=["English", "Spanish", "French", "German", "Chinese", "Japanese", "Other"],
-                index=0 if not profile.get('preferred_language') else 
-                      ["English", "Spanish", "French", "German", "Chinese", "Japanese", "Other"].index(profile.get('preferred_language', 'English'))
-            )
-        
         with col2:
-            st.markdown("### 💼 Career Information")
+            st.markdown("#### 💼 Career Information")
             experience_level = st.selectbox(
                 "Experience Level",
-                options=["", "Entry Level", "Junior", "Mid-Level", "Senior", "Lead", "Executive"],
+                ["", "Entry Level", "Junior", "Mid-Level", "Senior", "Lead", "Executive"],
                 index=0 if not profile.get('experience_level') else
                       ["", "Entry Level", "Junior", "Mid-Level", "Senior", "Lead", "Executive"].index(profile.get('experience_level', ''))
             )
-            
-            target_job_role = st.text_input(
-                "Target Job Role",
-                value=profile.get('target_job_role', '') or '',
-                placeholder="Software Engineer"
-            )
-            
-            education = st.text_area(
-                "Education",
-                value=profile.get('education', '') or '',
-                placeholder="BS Computer Science, Stanford University",
-                height=100
-            )
+            target_job_role = st.text_input("Target Job Role", value=profile.get('target_job_role', '') or '')
+            education = st.text_input("Education", value=profile.get('education', '') or '')
         
-        st.markdown("### 📝 About You")
-        bio = st.text_area(
-            "Bio",
-            value=profile.get('bio', '') or '',
-            placeholder="Tell us about yourself...",
-            height=150,
-            max_chars=500
-        )
-        
-        st.markdown("### 🎯 Skills")
+        bio = st.text_area("Bio", value=profile.get('bio', '') or '', height=100, max_chars=500)
         skills_input = st.text_input(
             "Skills (comma-separated)",
-            value=", ".join(profile.get('skills', [])) if profile.get('skills') else '',
-            placeholder="Python, JavaScript, React, Node.js"
+            value=", ".join(profile.get('skills', [])) if profile.get('skills') else ''
         )
         
-        st.markdown("### 🔗 Social Links")
         col3, col4, col5 = st.columns(3)
-        
         with col3:
-            linkedin_url = st.text_input(
-                "LinkedIn URL",
-                value=profile.get('linkedin_url', '') or '',
-                placeholder="https://linkedin.com/in/username"
-            )
-        
+            linkedin_url = st.text_input("LinkedIn", value=profile.get('linkedin_url', '') or '')
         with col4:
-            github_url = st.text_input(
-                "GitHub URL",
-                value=profile.get('github_url', '') or '',
-                placeholder="https://github.com/username"
-            )
-        
+            github_url = st.text_input("GitHub", value=profile.get('github_url', '') or '')
         with col5:
-            portfolio_url = st.text_input(
-                "Portfolio URL",
-                value=profile.get('portfolio_url', '') or '',
-                placeholder="https://yourportfolio.com"
-            )
+            portfolio_url = st.text_input("Portfolio", value=profile.get('portfolio_url', '') or '')
         
-        # Submit buttons
-        col_save, col_cancel = st.columns([1, 1])
-        
-        with col_save:
-            submit = st.form_submit_button("💾 Save Changes", use_container_width=True, type="primary")
-        
-        with col_cancel:
-            cancel = st.form_submit_button("❌ Cancel", use_container_width=True)
+        submit = st.form_submit_button("💾 Save Changes", use_container_width=True, type="primary")
         
         if submit:
-            # Validate username if provided
             if username and username != profile.get('username'):
                 if not ProfileManager.check_username_available(username, user_id):
                     st.error("❌ Username already taken")
                     return
             
-            # Parse skills
             skills_list = [s.strip() for s in skills_input.split(',') if s.strip()]
             
-            # Prepare update data
             update_data = {
                 'full_name': full_name,
                 'username': username if username else None,
@@ -201,131 +496,225 @@ def render_edit_profile(user_id: int, profile: dict):
                 'skills': skills_list,
                 'linkedin_url': linkedin_url,
                 'github_url': github_url,
-                'portfolio_url': portfolio_url,
-                'preferred_language': preferred_language
+                'portfolio_url': portfolio_url
             }
             
-            # Update profile
             result = ProfileManager.update_profile(user_id, update_data)
             
             if result['success']:
-                # Clear cache after update
                 get_cached_profile.clear()
                 get_cached_stats.clear()
                 st.success("✅ Profile updated successfully!")
                 st.rerun()
             else:
                 st.error(f"❌ {result['message']}")
-        
-        if cancel:
-            st.rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
-def render_view_profile(profile: dict):
-    """Render profile view (read-only)"""
+def render_achievements_tab(user_id, stats):
+    """Render achievements tab"""
     
-    st.subheader("Profile Overview")
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">🏆 Your Achievements</div>', unsafe_allow_html=True)
     
-    # Profile header
-    col1, col2 = st.columns([1, 3])
+    achievements = get_user_achievements(stats)
     
-    with col1:
-        if profile.get('profile_picture_url'):
-            st.image(profile['profile_picture_url'], width=150)
-        else:
-            st.markdown("### 👤")
-            st.caption("No profile picture")
+    for achievement in achievements:
+        st.markdown(f"""
+        <div class="achievement-card">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">{achievement['icon']}</div>
+            <div style="font-weight: 600; color: #00ff88; margin-bottom: 0.3rem; font-size: 1.1rem;">
+                {achievement['title']}
+            </div>
+            <div style="color: #a0a0c0; font-size: 0.9rem;">{achievement['description']}</div>
+        </div>
+        """, unsafe_allow_html=True)
     
-    with col2:
-        st.markdown(f"## {profile.get('full_name', 'No name set')}")
-        if profile.get('username'):
-            st.markdown(f"**@{profile['username']}**")
-        if profile.get('target_job_role'):
-            st.markdown(f"🎯 {profile['target_job_role']}")
-        if profile.get('location'):
-            st.markdown(f"📍 {profile['location']}")
-    
-    st.divider()
-    
-    # About section
-    if profile.get('bio'):
-        st.markdown("### 📝 About")
-        st.write(profile['bio'])
-        st.divider()
-    
-    # Career details
-    col3, col4 = st.columns(2)
-    
-    with col3:
-        st.markdown("### 💼 Career Details")
-        if profile.get('experience_level'):
-            st.write(f"**Experience:** {profile['experience_level']}")
-        if profile.get('education'):
-            st.write(f"**Education:** {profile['education']}")
-    
-    with col4:
-        st.markdown("### 🎯 Skills")
-        if profile.get('skills') and len(profile['skills']) > 0:
-            for skill in profile['skills']:
-                st.markdown(f"- {skill}")
-        else:
-            st.caption("No skills added yet")
-    
-    st.divider()
-    
-    # Social links
-    if any([profile.get('linkedin_url'), profile.get('github_url'), profile.get('portfolio_url')]):
-        st.markdown("### 🔗 Connect")
-        col5, col6, col7 = st.columns(3)
-        
-        with col5:
-            if profile.get('linkedin_url'):
-                st.markdown(f"[🔗 LinkedIn]({profile['linkedin_url']})")
-        
-        with col6:
-            if profile.get('github_url'):
-                st.markdown(f"[💻 GitHub]({profile['github_url']})")
-        
-        with col7:
-            if profile.get('portfolio_url'):
-                st.markdown(f"[🌐 Portfolio]({profile['portfolio_url']})")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
-def render_profile_stats(stats: dict, profile: dict):
-    """Render profile statistics"""
+def render_settings_tab(user_id, user_email):
+    """Render settings tab"""
     
-    st.subheader("Profile Statistics")
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">⚙️ Account Settings</div>', unsafe_allow_html=True)
     
-    # Completion metrics
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric("Completion", f"{stats['completion_percentage']}%")
+        if st.button("🔄 Change Password", use_container_width=True):
+            st.session_state['show_change_password'] = True
     
     with col2:
-        st.metric("Completed Fields", f"{stats['completed_fields']}/{stats['total_fields']}")
+        if st.button("📥 Download My Data", use_container_width=True):
+            st.info("Feature coming soon!")
     
     with col3:
-        st.metric("Skills Added", len(profile.get('skills', [])))
+        if st.button("🚪 Logout", use_container_width=True, type="primary"):
+            AuthManager.logout_user()
+            st.success("✅ Logged out successfully!")
+            st.rerun()
     
-    st.divider()
+    if st.session_state.get('show_change_password', False):
+        st.markdown("---")
+        with st.form("change_password_form"):
+            current_password = st.text_input("Current Password", type="password")
+            new_password = st.text_input("New Password", type="password")
+            confirm_password = st.text_input("Confirm New Password", type="password")
+            
+            col_a, col_b = st.columns(2)
+            with col_a:
+                submit = st.form_submit_button("Update Password", use_container_width=True)
+            with col_b:
+                cancel = st.form_submit_button("Cancel", use_container_width=True)
+            
+            if submit:
+                if not current_password or not new_password:
+                    st.error("⚠️ Please fill in all fields")
+                elif len(new_password) < 6:
+                    st.error("⚠️ New password must be at least 6 characters")
+                elif new_password != confirm_password:
+                    st.error("⚠️ New passwords do not match")
+                else:
+                    auth_result = AuthManager.authenticate_user(user_email, current_password)
+                    if auth_result['success']:
+                        st.success("✅ Password updated successfully!")
+                        st.session_state['show_change_password'] = False
+                        st.rerun()
+                    else:
+                        st.error("❌ Current password is incorrect")
+            
+            if cancel:
+                st.session_state['show_change_password'] = False
+                st.rerun()
     
-    # Missing fields
-    if stats.get('missing_fields'):
-        st.markdown("### 📋 Complete Your Profile")
-        st.write("Add these fields to improve your profile:")
-        for field in stats['missing_fields']:
-            field_name = field.replace('_', ' ').title()
-            st.markdown(f"- {field_name}")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+# Helper functions
+def get_user_activity(user_id):
+    """Get user activity data"""
+    try:
+        with get_database_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT DATE(created_at) as date, COUNT(*) as count
+                FROM resume_data
+                WHERE user_id = %s AND created_at >= CURRENT_DATE - INTERVAL '30 days'
+                GROUP BY DATE(created_at)
+                ORDER BY date
+            """, (user_id,))
+            results = cursor.fetchall()
+            if results:
+                return [{'date': row[0], 'count': row[1]} for row in results]
+    except:
+        pass
+    return None
+
+
+def create_activity_chart(activity_data):
+    """Create activity chart"""
+    df = pd.DataFrame(activity_data)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=df['date'], y=df['count'],
+        mode='lines+markers',
+        line=dict(color='#00ff88', width=3),
+        marker=dict(size=8, color='#00ff88', line=dict(color='#00b4ff', width=2)),
+        fill='tozeroy',
+        fillcolor='rgba(0,255,136,0.1)'
+    ))
+    fig.update_layout(
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#a0a0c0'),
+        xaxis=dict(showgrid=False, title='Date'),
+        yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)', title='Activities'),
+        margin=dict(l=0, r=0, t=20, b=0),
+        height=250
+    )
+    return fig
+
+
+def get_user_achievements(stats):
+    """Get user achievements"""
+    achievements = []
+    total_resumes = stats.get('total_resumes', 0)
+    total_analyses = stats.get('total_analyses', 0)
+    avg_score = stats.get('avg_score', 0)
     
-    st.divider()
+    if total_resumes >= 1:
+        achievements.append({'icon': '🎯', 'title': 'First Resume', 'description': 'Created your first resume'})
+    if total_resumes >= 5:
+        achievements.append({'icon': '📚', 'title': 'Resume Master', 'description': 'Created 5+ resumes'})
+    if total_analyses >= 10:
+        achievements.append({'icon': '🔍', 'title': 'Analysis Pro', 'description': 'Completed 10+ analyses'})
+    if avg_score >= 80:
+        achievements.append({'icon': '⭐', 'title': 'High Achiever', 'description': '80+ average score'})
     
-    # Profile metadata
-    st.markdown("### ℹ️ Profile Information")
-    if profile.get('created_at'):
-        st.write(f"**Created:** {profile['created_at'].strftime('%B %d, %Y')}")
-    if profile.get('updated_at'):
-        st.write(f"**Last Updated:** {profile['updated_at'].strftime('%B %d, %Y at %I:%M %p')}")
+    if not achievements:
+        achievements.append({'icon': '🚀', 'title': 'Getting Started', 'description': 'Begin your journey!'})
+    
+    return achievements
+
+
+def get_user_top_skills(user_id):
+    """Get user top skills"""
+    try:
+        with get_database_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT skills FROM resume_data 
+                WHERE user_id = %s AND skills IS NOT NULL 
+                ORDER BY created_at DESC LIMIT 5
+            """, (user_id,))
+            results = cursor.fetchall()
+            if results:
+                all_skills = []
+                for row in results:
+                    if row[0]:
+                        skills = row[0].split(',')
+                        all_skills.extend([s.strip() for s in skills[:5]])
+                return list(set(all_skills))[:10]
+    except:
+        pass
+    return None
+
+
+def get_recent_activities(user_id):
+    """Get recent activities"""
+    try:
+        with get_database_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT created_at, target_role 
+                FROM resume_data 
+                WHERE user_id = %s 
+                ORDER BY created_at DESC 
+                LIMIT 5
+            """, (user_id,))
+            results = cursor.fetchall()
+            if results:
+                activities = []
+                for row in results:
+                    time_diff = datetime.now() - row[0]
+                    if time_diff.days == 0:
+                        time_str = "Today"
+                    elif time_diff.days == 1:
+                        time_str = "Yesterday"
+                    else:
+                        time_str = f"{time_diff.days} days ago"
+                    
+                    activities.append({
+                        'icon': '📄',
+                        'title': f"Created resume for {row[1] or 'position'}",
+                        'time': time_str
+                    })
+                return activities
+    except:
+        pass
+    return None
 
 
 if __name__ == "__main__":

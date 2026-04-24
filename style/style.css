@@ -732,3 +732,45 @@ hr {
   .hero-title { font-size: 2rem; }
   .stat-value { font-size: 1.5rem; }
 }
+
+/* ── Hide Streamlit branding (but keep header visible) ───────────────────────────────── */
+#MainMenu { visibility: hidden !important; }
+footer { visibility: hidden !important; }
+[data-testid="stDecoration"] { display: none !important; }
+.viewerBadge_container__r5tak { display: none !important; }
+.viewerBadge_link__qRIco { display: none !important; }
+
+/* ── Hide Deploy button but keep loading animation ──── */
+.stDeployButton { display: none !important; }
+button[kind="header"] { display: none !important; }
+
+/* ── Keep header and toolbar visible for sidebar toggle ──── */
+[data-testid="stHeader"] { 
+  background: var(--bg-2) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+}
+
+[data-testid="stToolbar"] { 
+  background: transparent !important;
+}
+
+/* ── Keep status widget (loading animation) visible and styled ──── */
+[data-testid="stStatusWidget"] {
+  display: block !important;
+  background: transparent !important;
+}
+
+[data-testid="stStatusWidget"] > div {
+  background: rgba(0,255,136,.1) !important;
+  border: 1px solid rgba(0,255,136,.2) !important;
+  border-radius: 50px !important;
+  padding: 4px 12px !important;
+  color: var(--green) !important;
+}
+
+/* ── Sidebar collapse button — keep visible and style it ──── */
+[data-testid="stSidebarCollapseButton"] button {
+  background: rgba(0,255,136,.1) !important;
+  border-radius: 50% !important;
+  color: var(--green) !important;
+}

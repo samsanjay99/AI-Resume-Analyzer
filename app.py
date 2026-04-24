@@ -275,11 +275,25 @@ class ResumeApp:
         # Always hide Streamlit Cloud badges regardless of CSS file loading
         st.markdown("""
         <style>
-        footer {visibility: hidden !important; display: none !important;}
+        /* Comprehensive badge hiding - CSS only, no JS */
+        footer {visibility: hidden !important; display: none !important; height: 0 !important;}
         [data-testid="stDecoration"] {display: none !important;}
         [class*="viewerBadge"] {display: none !important;}
+        [class*="ViewerBadge"] {display: none !important;}
         .styles_viewerBadge__CvC9N {display: none !important;}
         #stDecoration {display: none !important;}
+        
+        /* Hide toolbar badges */
+        [data-testid="stToolbar"] a[href*="github"] {display: none !important;}
+        [data-testid="stToolbar"] a[target="_blank"] {display: none !important;}
+        
+        /* Hide any iframes with badge in title */
+        iframe[title*="badge" i] {display: none !important;}
+        iframe[title*="streamlit" i] {display: none !important;}
+        
+        /* Hide specific badge containers */
+        div[class*="viewerBadge"] {display: none !important;}
+        div[class*="ViewerBadge"] {display: none !important;}
         </style>
         """, unsafe_allow_html=True)
 

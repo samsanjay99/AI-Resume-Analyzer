@@ -37,6 +37,9 @@ beautifulsoup4>=4.12.0
 # Authentication & Security
 bcrypt>=4.0.0
 
+# NLP
+nltk>=3.8.0
+
 # Utilities
 schedule>=1.2.0
 
@@ -44,10 +47,6 @@ schedule>=1.2.0
 streamlit-lottie>=0.0.5
 streamlit-option-menu>=0.3.0
 streamlit-extras>=0.3.0
-
-
-
-
 
 # Mock Interview
 # Note: VAPI runs via browser JS (CDN), no Python package needed

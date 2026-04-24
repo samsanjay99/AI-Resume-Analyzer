@@ -273,8 +273,16 @@ class ResumeApp:
             print(f'CSS load error: {_e}')
 
     def add_footer(self):
-        """Add a footer to all pages"""
-        pass
+        """Add a minimal professional footer"""
+        st.markdown("---")
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown(
+                "<p style='text-align:center;color:#606080;font-size:0.82rem;margin:0;'>"
+                "© 2026 <strong style='color:#00ff88;'>Smart Resume AI</strong> · All rights reserved &nbsp;|&nbsp; Built with ❤️ using AI"
+                "</p>",
+                unsafe_allow_html=True
+            )
 
     def load_image(self, image_name):
         """Load image from static directory"""

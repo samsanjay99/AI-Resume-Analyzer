@@ -272,30 +272,16 @@ class ResumeApp:
         except Exception as _e:
             print(f'CSS load error: {_e}')
         
-        # Always hide Streamlit Cloud badges regardless of CSS file loading
-        st.markdown("""
+        # Hide Streamlit Cloud badges - using the correct data-testid
+        hide_footer_style = """
         <style>
-        /* Comprehensive badge hiding - CSS only, no JS */
-        footer {visibility: hidden !important; display: none !important; height: 0 !important;}
+        footer {visibility: hidden !important;}
+        [data-testid="stViewerBadge"] {display: none !important;}
         [data-testid="stDecoration"] {display: none !important;}
-        [class*="viewerBadge"] {display: none !important;}
-        [class*="ViewerBadge"] {display: none !important;}
-        .styles_viewerBadge__CvC9N {display: none !important;}
-        #stDecoration {display: none !important;}
-        
-        /* Hide toolbar badges */
-        [data-testid="stToolbar"] a[href*="github"] {display: none !important;}
-        [data-testid="stToolbar"] a[target="_blank"] {display: none !important;}
-        
-        /* Hide any iframes with badge in title */
-        iframe[title*="badge" i] {display: none !important;}
-        iframe[title*="streamlit" i] {display: none !important;}
-        
-        /* Hide specific badge containers */
-        div[class*="viewerBadge"] {display: none !important;}
-        div[class*="ViewerBadge"] {display: none !important;}
+        #MainMenu {visibility: hidden !important;}
         </style>
-        """, unsafe_allow_html=True)
+        """
+        st.markdown(hide_footer_style, unsafe_allow_html=True)
 
     def add_footer(self):
         """Add a minimal professional footer"""

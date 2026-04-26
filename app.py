@@ -3373,6 +3373,21 @@ class ResumeApp:
                             st.error(f"Error reading file: {str(e)}")
                             st.stop()
 
+                        # ── Document validation before AI analysis ──────────
+                        if not text or len(text.strip()) < 150:
+                            st.error("⚠️ The uploaded file contains very little or no text. It may be a scanned image, blank document, or unsupported format. Please upload a text-based Resume (PDF or DOCX).")
+                            st.stop()
+
+                        doc_type = self.analyzer.detect_document_type(text)
+                        has_resume_sections = any(s in text.lower() for s in ['experience', 'education', 'skills', 'work', 'project', 'summary', 'objective'])
+                        has_contact = any(c in text.lower() for c in ['email', 'phone', '@', '.com'])
+
+                        if doc_type in ['marksheet', 'certificate', 'id_card'] and not (has_resume_sections or has_contact):
+                            friendly = {'marksheet': 'an Academic Marksheet / Grade Sheet', 'certificate': 'a Certificate or Award Document', 'id_card': 'an ID Card'}
+                            st.error(f"⚠️ Invalid Document: The uploaded file appears to be {friendly.get(doc_type, 'a non-resume document')}.\n\nPlease upload your **Resume or CV** to proceed with NEXUS analysis.")
+                            st.stop()
+                        # ────────────────────────────────────────────────────
+
                         # Analyze with AI
                         try:
                             # Show a loading animation

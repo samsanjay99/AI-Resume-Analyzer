@@ -488,35 +488,51 @@ class ResumeAnalyzer:
         """Analyze resume and return scores and recommendations"""
         try:
             text = resume_data.get('raw_text', '')
-            
+
             # Extract personal information
             personal_info = self.extract_personal_info(text)
-            
-            # First detect document type
+
+            # Detect document type
             doc_type = self.detect_document_type(text)
-            
-            # Only reject if it's clearly not a resume (like marksheet, certificate, etc.)
-            # But be very conservative about rejection
+
+            # Check for resume indicators
+            has_resume_sections = any(section in text.lower() for section in [
+                'experience', 'education', 'skills', 'work', 'project', 'summary', 'objective'
+            ])
+            has_contact = any(contact in text.lower() for contact in ['email', 'phone', '@', '.com'])
+
             if doc_type in ['marksheet', 'certificate', 'id_card']:
-                # Double-check by looking for resume indicators
-                has_resume_sections = any(section in text.lower() for section in ['experience', 'education', 'skills', 'work', 'project', 'summary', 'objective'])
-                has_contact = any(contact in text.lower() for contact in ['email', 'phone', '@', '.com'])
-                
                 if has_resume_sections or has_contact:
-                    # Override detection - it's likely a resume
                     doc_type = 'resume'
                 else:
+                    friendly_names = {
+                        'marksheet': 'an Academic Marksheet / Grade Sheet',
+                        'certificate': 'a Certificate or Award Document',
+                        'id_card': 'an ID Card'
+                    }
                     return {
+                        'error': f"⚠️ Invalid Document: The uploaded file appears to be {friendly_names.get(doc_type, 'a non-resume document')}.\n\nPlease upload your **Resume or CV** (PDF or DOCX) to proceed with analysis.",
                         'ats_score': 0,
                         'document_type': doc_type,
                         'keyword_match': {'score': 0, 'found_skills': [], 'missing_skills': []},
                         'section_score': 0,
                         'format_score': 0,
-                        'suggestions': [f"This appears to be a {doc_type} document. Please upload a resume for ATS analysis."]
+                        'suggestions': []
                     }
-            
-            # If uncertain or detected as resume, proceed with analysis
-            doc_type = 'resume'  # Force treat as resume for analysis
+
+            # If text is too short to be a real resume
+            if len(text.strip()) < 150:
+                return {
+                    'error': "⚠️ The uploaded file contains very little text. It may be a scanned image, blank document, or unsupported format. Please upload a text-based Resume (PDF or DOCX).",
+                    'ats_score': 0,
+                    'document_type': 'unknown',
+                    'keyword_match': {'score': 0, 'found_skills': [], 'missing_skills': []},
+                    'section_score': 0,
+                    'format_score': 0,
+                    'suggestions': []
+                }
+
+            doc_type = 'resume'
                 
             # Calculate keyword match
             required_skills = job_requirements.get('required_skills', [])

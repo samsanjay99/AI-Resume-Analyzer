@@ -14,22 +14,22 @@ def render_video_card(course: dict, show_preview: bool = False):
     is_bookmarked = course.get('is_bookmarked', False)
     is_watched = course.get('is_watched', False)
     
-    st.markdown(f"""
-    <div class="video-card">
-        <div class="thumb-wrap">
-            <img src="{thumbnail_url}" alt="{course['course_title']}" loading="lazy">
-            <div class="play-btn"></div>
-            <div class="dur-badge">{course['video_duration']}</div>
-            <div class="bm-badge">{'★' if is_bookmarked else '☆'}</div>
-        </div>
-        <div class="card-body">
-            <p class="card-title">{course['course_title']}</p>
-            <p class="card-channel">{course['channel_name']}</p>
-            <span class="skill-chip">{course['skill_covered']}</span>
-            {'<span class="watched-chip">✅ Watched</span>' if is_watched else ''}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    watched_badge = "<span style='display:inline-block;background:rgba(0,180,255,0.1);color:#00b4ff;border:1px solid rgba(0,180,255,0.25);padding:3px 10px;border-radius:50px;font-size:0.75rem;font-weight:600;margin-left:0.4rem;'>✅ Watched</span>" if is_watched else ""
+    bm_icon = "★" if is_bookmarked else "☆"
+
+    st.markdown(f"""<div style='background:linear-gradient(135deg,rgba(15,23,42,0.9),rgba(30,41,59,0.9));border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);transition:all 0.3s ease;margin-bottom:0.5rem;'>
+<div style='position:relative;width:100%;padding-top:56.25%;overflow:hidden;background:#0a0a1a;'>
+<img src="{thumbnail_url}" alt="{course['course_title']}" loading="lazy" style='position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;'>
+<div style='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:40px;background:rgba(255,0,0,0.88);border-radius:10px;'></div>
+<span style='position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.82);color:white;padding:3px 7px;border-radius:4px;font-size:0.72rem;font-weight:600;'>{course['video_duration']}</span>
+<span style='position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;'>{bm_icon}</span>
+</div>
+<div style='padding:1rem;'>
+<p style='color:#f0f0ff;font-size:0.95rem;font-weight:600;margin:0 0 0.4rem 0;line-height:1.4;'>{course['course_title']}</p>
+<p style='color:#a0a0c0;font-size:0.82rem;margin:0 0 0.5rem 0;'>{course['channel_name']}</p>
+<span style='display:inline-block;background:rgba(0,255,136,0.1);color:#00ff88;border:1px solid rgba(0,255,136,0.25);padding:3px 10px;border-radius:50px;font-size:0.75rem;font-weight:600;'>{course['skill_covered']}</span>{watched_badge}
+</div>
+</div>""", unsafe_allow_html=True)
     
     col1, col2 = st.columns([3, 1])
     with col1:

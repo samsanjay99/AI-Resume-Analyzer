@@ -8,12 +8,13 @@ from auth.auth_manager import AuthManager
 
 def render_video_card(course: dict, show_preview: bool = False):
     """Render a modern YouTube video card"""
-    
+
     video_id = course['youtube_video_id']
     thumbnail_url = course['thumbnail_url']
     is_bookmarked = course.get('is_bookmarked', False)
     is_watched = course.get('is_watched', False)
-    
+    course_url = course['course_url']
+
     watched_badge = "<span style='display:inline-block;background:rgba(0,180,255,0.1);color:#00b4ff;border:1px solid rgba(0,180,255,0.25);padding:3px 10px;border-radius:50px;font-size:0.75rem;font-weight:600;margin-left:0.4rem;'>✅ Watched</span>" if is_watched else ""
     bm_icon = "★" if is_bookmarked else "☆"
 
@@ -30,25 +31,34 @@ def render_video_card(course: dict, show_preview: bool = False):
 <span style='display:inline-block;background:rgba(0,255,136,0.1);color:#00ff88;border:1px solid rgba(0,255,136,0.25);padding:3px 10px;border-radius:50px;font-size:0.75rem;font-weight:600;'>{course['skill_covered']}</span>{watched_badge}
 </div>
 </div>""", unsafe_allow_html=True)
-    
+
     col1, col2 = st.columns([3, 1])
     with col1:
-        if st.button("▶ Watch on YouTube", key=f"watch_{course['id']}", use_container_width=True):
+        # Opens YouTube in a new tab without navigating away from the app
+        st.markdown(
+            f"<a href='{course_url}' target='_blank' rel='noopener noreferrer' "
+            f"style='display:block;text-align:center;background:linear-gradient(135deg,#00cc6a,#00a855);"
+            f"color:#000;font-weight:700;font-size:0.88rem;padding:0.6rem 1rem;border-radius:50px;"
+            f"text-decoration:none;width:100%;box-sizing:border-box;'>▶ Watch on YouTube</a>",
+            unsafe_allow_html=True
+        )
+        # Mark as watched when user clicks (tracked separately via a small button)
+        if st.button("✓ Mark as Watched", key=f"watched_{course['id']}", use_container_width=True):
             CourseRecommendationManager.mark_as_watched(course['id'], AuthManager.get_current_user_id())
-            st.markdown(f'<meta http-equiv="refresh" content="0;url={course["course_url"]}">', unsafe_allow_html=True)
-            st.success("Opening YouTube...")
+            st.rerun()
     with col2:
-        if st.button("★" if is_bookmarked else "☆", key=f"bookmark_{course['id']}", use_container_width=True):
+        if st.button(bm_icon, key=f"bookmark_{course['id']}", use_container_width=True):
             CourseRecommendationManager.toggle_bookmark(course['id'], AuthManager.get_current_user_id())
             st.rerun()
-    
+
     if show_preview:
-        st.markdown(f"""
-        <iframe width="100%" height="200"
-            src="https://www.youtube.com/embed/{video_id}"
-            frameborder="0" allowfullscreen loading="lazy">
-        </iframe>
-        """, unsafe_allow_html=True)
+        # Use /embed/ URL — youtube.com/watch is blocked by X-Frame-Options
+        st.markdown(
+            f"<iframe width='100%' height='200' "
+            f"src='https://www.youtube.com/embed/{video_id}' "
+            f"frameborder='0' allowfullscreen loading='lazy'></iframe>",
+            unsafe_allow_html=True
+        )
 
 def render_learning_dashboard():
     """Main learning dashboard page"""

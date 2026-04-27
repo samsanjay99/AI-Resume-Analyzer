@@ -219,8 +219,12 @@ class ResumeApp:
         self.portfolio_generator = PortfolioGenerator()
         self.job_roles = JOB_ROLES
         
-        # Initialize database and create default admin
-        init_database()
+        # Initialize database — non-fatal, app starts even if DB is unreachable
+        try:
+            init_database()
+        except Exception as _db_err:
+            print(f"⚠️ Database unavailable at startup: {_db_err}")
+            st.warning("⚠️ Database connection failed. Some features may be unavailable. Check your internet connection or DATABASE_URL.", icon="⚠️")
         
         # Debug admin table
         from config.database import debug_admin_table

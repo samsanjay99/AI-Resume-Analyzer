@@ -21,78 +21,63 @@ _cache_timeout = 300  # Increased cache timeout to 5 minutes for better performa
 _database_initialized = False  # Flag to track if database is initialized
 
 def get_connection_pool():
-    """Get or create the connection pool with optimized settings"""
+    """Get or create the connection pool"""
     global _connection_pool
     if _connection_pool is None:
+        if not DATABASE_URL:
+            print("❌ DATABASE_URL not set in environment variables")
+            return None
         try:
-            # Parse DATABASE_URL to add connection optimizations
-            import urllib.parse as urlparse
-            url = urlparse.urlparse(DATABASE_URL)
-            
-            # Build optimized connection string with Neon-specific optimizations
-            optimized_dsn = (
-                f"postgresql://{url.username}:{url.password}@{url.hostname}{url.path}"
-                f"?sslmode=require"
-                f"&connect_timeout=10"
-                f"&keepalives=1"
-                f"&keepalives_idle=30"
-                f"&keepalives_interval=10"
-                f"&keepalives_count=5"
-                f"&application_name=smart_resume_ai"
-            )
-            
             _connection_pool = psycopg2.pool.ThreadedConnectionPool(
-                minconn=2,  # Keep 2 connections ready
-                maxconn=20,  # Allow up to 20 connections
-                dsn=optimized_dsn
-            )
-            print("✅ Optimized database connection pool created")
-        except Exception as e:
-            print(f"❌ Error creating connection pool: {e}")
-            # Fallback to simple pool
-            _connection_pool = psycopg2.pool.SimpleConnectionPool(
                 minconn=1,
                 maxconn=10,
                 dsn=DATABASE_URL
             )
+            print("✅ Database connection pool created")
+        except Exception as e:
+            print(f"❌ Database connection pool failed: {e}")
+            return None
     return _connection_pool
 
 @contextmanager
 def get_database_connection():
     """Get a connection from the pool with health check"""
-    pool = get_connection_pool()
+    db_pool = get_connection_pool()
+    if db_pool is None:
+        raise ConnectionError(
+            "❌ Cannot connect to database. Check your DATABASE_URL and internet connection.\n"
+            f"Host: ep-square-tooth-aisqzcq6-pooler.c-4.us-east-1.aws.neon.tech"
+        )
     conn = None
     try:
-        conn = pool.getconn()
-        
+        conn = db_pool.getconn()
+
         # Test connection health
         try:
             cursor = conn.cursor()
             cursor.execute("SELECT 1")
             cursor.close()
-        except Exception as health_error:
-            # Connection is stale, close it and get a new one
-            print(f"⚠️ Stale connection detected, refreshing...")
+        except Exception:
+            print("⚠️ Stale connection detected, refreshing...")
             try:
-                pool.putconn(conn, close=True)
-            except:
+                db_pool.putconn(conn, close=True)
+            except Exception:
                 pass
-            conn = pool.getconn()
-        
+            conn = db_pool.getconn()
+
         yield conn
     except Exception as e:
         print(f"❌ Database connection error: {e}")
-        # Try to get a fresh connection
         if conn:
             try:
-                pool.putconn(conn, close=True)
-            except:
+                db_pool.putconn(conn, close=True)
+            except Exception:
                 pass
         raise
     finally:
         if conn:
             try:
-                pool.putconn(conn)
+                db_pool.putconn(conn)
             except Exception as e:
                 print(f"⚠️ Error returning connection to pool: {e}")
 
@@ -126,16 +111,15 @@ def warm_cache():
         print(f"⚠️ Cache warm-up warning: {e}")
 
 def init_database():
-    """Initialize database tables (runs only once)"""
+    """Initialize database tables (runs only once). Non-fatal — app still starts if DB is unreachable."""
     global _database_initialized
-    
-    # Skip if already initialized
+
     if _database_initialized:
         print("ℹ️ Database already initialized, skipping...")
         return
-    
+
     print("🔄 Initializing database tables...")
-    
+
     try:
         with get_database_connection() as conn:
             cursor = conn.cursor()
@@ -240,12 +224,9 @@ def init_database():
         warm_cache()
         
     except Exception as e:
-        print(f"❌ Error initializing database: {e}")
-        import traceback
-        traceback.print_exc()
-        # Don't mark as initialized if there was an error
+        print(f"❌ Database init failed: {e}")
         _database_initialized = False
-        raise
+        # Do NOT raise — app continues without DB
 
 def save_resume_data(data, user_id=None):
     """Save resume data to database with user_id"""

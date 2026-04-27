@@ -177,8 +177,8 @@ def generate_certificate(user_name: str, skill_name: str, user_id: int, video_id
     font_course = _load_font("PlayfairDisplay.ttf",  38)
     font_small  = _load_font("Lato-Regular.ttf",     23)
 
-    # ── User name (centered, y=390) ───────────────────────────────────────────
-    _center_text(draw, user_name, font_name, 390,
+    # ── User name (centered, y=390, UPPERCASE) ───────────────────────────────
+    _center_text(draw, user_name.upper(), font_name, 390,
                  "#0b2c4d", W, max_width=int(W * 0.65))
 
     # ── Course name (centered, y=550, UPPERCASE) ──────────────────────────────

@@ -6,16 +6,23 @@ import streamlit as st
 from config.course_recommendation_manager import CourseRecommendationManager
 from auth.auth_manager import AuthManager
 
-def render_video_card(course: dict, show_preview: bool = False):
+def render_video_card(course: dict, completed_video_ids: set = None):
     """Render a modern YouTube video card"""
 
-    video_id = course['youtube_video_id']
+    video_id      = course['youtube_video_id']
     thumbnail_url = course['thumbnail_url']
     is_bookmarked = course.get('is_bookmarked', False)
-    is_watched = course.get('is_watched', False)
-    course_url = course['course_url']
+    is_watched    = course.get('is_watched', False)
+    course_url    = course['course_url']
 
-    watched_badge = "<span style='display:inline-block;background:rgba(0,180,255,0.1);color:#00b4ff;border:1px solid rgba(0,180,255,0.25);padding:3px 10px;border-radius:50px;font-size:0.75rem;font-weight:600;margin-left:0.4rem;'>✅ Watched</span>" if is_watched else ""
+    # Use pre-loaded completed set (avoids per-card DB call)
+    cert_done = (completed_video_ids is not None) and (video_id in completed_video_ids)
+    watched_badge = ""
+    if cert_done:
+        watched_badge = "<span style='display:inline-block;background:rgba(0,255,136,0.12);color:#00ff88;border:1px solid rgba(0,255,136,0.3);padding:3px 10px;border-radius:50px;font-size:0.75rem;font-weight:600;margin-left:0.4rem;'>🏆 Certified</span>"
+    elif is_watched:
+        watched_badge = "<span style='display:inline-block;background:rgba(0,180,255,0.1);color:#00b4ff;border:1px solid rgba(0,180,255,0.25);padding:3px 10px;border-radius:50px;font-size:0.75rem;font-weight:600;margin-left:0.4rem;'>✅ Watched</span>"
+
     bm_icon = "★" if is_bookmarked else "☆"
 
     st.markdown(f"""<div style='background:linear-gradient(135deg,rgba(15,23,42,0.9),rgba(30,41,59,0.9));border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);transition:all 0.3s ease;margin-bottom:0.5rem;'>
@@ -32,33 +39,27 @@ def render_video_card(course: dict, show_preview: bool = False):
 </div>
 </div>""", unsafe_allow_html=True)
 
-    col1, col2 = st.columns([3, 1])
+    col1, col2, col3 = st.columns([2, 2, 1])
     with col1:
-        # Opens YouTube in a new tab without navigating away from the app
-        st.markdown(
-            f"<a href='{course_url}' target='_blank' rel='noopener noreferrer' "
-            f"style='display:block;text-align:center;background:linear-gradient(135deg,#00cc6a,#00a855);"
-            f"color:#000;font-weight:700;font-size:0.88rem;padding:0.6rem 1rem;border-radius:50px;"
-            f"text-decoration:none;width:100%;box-sizing:border-box;'>▶ Watch on YouTube</a>",
-            unsafe_allow_html=True
-        )
-        # Mark as watched when user clicks (tracked separately via a small button)
-        if st.button("✓ Mark as Watched", key=f"watched_{course['id']}", use_container_width=True):
-            CourseRecommendationManager.mark_as_watched(course['id'], AuthManager.get_current_user_id())
+        # In-app player — tracks watch time and generates certificate
+        if st.button("▶ Watch In-App", key=f"inapp_{course['id']}", use_container_width=True, type="primary"):
+            st.session_state["current_video"] = course
+            st.session_state["page"] = "video_player"
             st.rerun()
     with col2:
+        # External fallback
+        st.markdown(
+            f"<a href='{course_url}' target='_blank' rel='noopener noreferrer' "
+            f"style='display:block;text-align:center;background:rgba(255,255,255,0.06);"
+            f"color:#a0a0c0;border:1px solid rgba(255,255,255,0.12);font-weight:600;"
+            f"font-size:0.82rem;padding:0.55rem 0.8rem;border-radius:50px;"
+            f"text-decoration:none;'>↗ YouTube</a>",
+            unsafe_allow_html=True
+        )
+    with col3:
         if st.button(bm_icon, key=f"bookmark_{course['id']}", use_container_width=True):
             CourseRecommendationManager.toggle_bookmark(course['id'], AuthManager.get_current_user_id())
             st.rerun()
-
-    if show_preview:
-        # Use /embed/ URL — youtube.com/watch is blocked by X-Frame-Options
-        st.markdown(
-            f"<iframe width='100%' height='200' "
-            f"src='https://www.youtube.com/embed/{video_id}' "
-            f"frameborder='0' allowfullscreen loading='lazy'></iframe>",
-            unsafe_allow_html=True
-        )
 
 def render_learning_dashboard():
     """Main learning dashboard page"""
@@ -243,6 +244,13 @@ def render_learning_dashboard():
     """, unsafe_allow_html=True)
     
     recommendations = CourseRecommendationManager.get_user_recommendations(user_id)
+
+    # ── One-time setup + batch-load completed video IDs ──────────────────────
+    from utils.certificate_manager import setup_certificate_tables, get_all_completed_video_ids
+    if not st.session_state.get("_cert_tables_ready"):
+        setup_certificate_tables()
+        st.session_state["_cert_tables_ready"] = True
+    completed_video_ids = get_all_completed_video_ids(user_id)
     
     if not recommendations:
         st.markdown("""
@@ -302,6 +310,6 @@ def render_learning_dashboard():
         for j, col in enumerate(cols):
             if i + j < len(filtered):
                 with col:
-                    render_video_card(filtered[i + j])
+                    render_video_card(filtered[i + j], completed_video_ids)
                     st.markdown("<br>", unsafe_allow_html=True)
 

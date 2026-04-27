@@ -4188,7 +4188,12 @@ class ResumeApp:
         render_user_history()
     
     def render_learning_dashboard(self):
-        """Render learning dashboard with course recommendations"""
+        """Render learning dashboard or in-app video player based on session state"""
+        # Route to video player if a video is selected
+        if st.session_state.get("page") == "video_player":
+            from pages.video_player import render_video_player
+            render_video_player()
+            return
         from pages.learning_dashboard import render_learning_dashboard
         render_learning_dashboard()
 
@@ -4470,6 +4475,13 @@ class ResumeApp:
         if current_page == 'profile':
             from pages.profile_management import render_profile_page
             render_profile_page()
+            self.add_footer()
+            return
+
+        # Handle video player page (in-app learning)
+        if current_page == 'video_player':
+            from pages.video_player import render_video_player
+            render_video_player()
             self.add_footer()
             return
         
